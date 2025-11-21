@@ -1,0 +1,144 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+        <div class="text-center mb-4">
+    <h2 class="fw-bold">Liste de <span class="text-primary">vos Revues Aube</span></h2>
+    <p class="mt-3">Liste de vos projets</p>
+</div>
+    <br>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#createRevueAubeModal">
+        Nouvelle Revue Aube
+    </button>
+    <br>
+    <hr>
+    <table id="tablerevueaube" class="table table-bordered table-striped">
+        <thead>
+        <th>Titre</th>
+        <th>Créé par</th>
+        <th>Créé le</th>
+        <th>Actions</th>
+        </thead>
+        <tbody>
+        {% for revue_aube in lst_revue_aube %}
+            <tr>
+                {% url 'lst_revue_aube' as url %}
+                <td>
+                    <a href="{{ url }}/{{ revue_aube.id }}">{{ revue_aube.name }}</a>
+                </td>
+                <td>{{ revue_aube.created_by }}</td>
+                <td>{{ revue_aube.created_at }}</td>
+                <td>
+                                        <a data-bs-toggle="modal"
+                       data-bs-target="#renameRevueAubeModal-{{ revue_aube.id }}"
+                       title="Renommer">
+                        <button type="button" class="btn btn-primary btn-sm"><i class="bi bi-pencil-fill"></i>
+              </button>
+                    </a>
+                        <a href="{% url 'delete_revue_aube' revue_aube.id %}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette revue ?');"
+                           title="Supprimer">
+<i class="bi bi-trash-fill"></i>
+              </a>
+
+                <div class="modal fade"
+                     id="renameRevueAubeModal-{{ revue_aube.id }}" tabindex="-1"
+                     aria-labelledby="renameRevueAubeModalLabel-{{ revue_aube.id }}"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post"
+                                  action="{% url 'rename_revue_aube' revue_aube.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title"
+                                        id="renameRevueAubeModalLabel-{{ revue_aube.id }}">
+                                        Renommer la revue : {{ revue_aube.title }}
+                                    </h5>
+                                    <button type="button" class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-floating">
+                                        <input type="text" name="new_name"
+                                               class="form-control"
+                                               id="floatingNewName-{{ revue_aube.id }}"
+                                               placeholder="Nouveau nom du Projet"
+                                               required>
+                                        <label for="floatingNewName-{{ revue_aube.id }}">Nouveau
+                                            nom du Projet</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Annuler
+                                    </button>
+                                    <button type="submit"
+                                            class="btn btn-primary">Renommer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+        <!-- Modal -->
+    <div class="modal fade" id="createRevueAubeModal" tabindex="-1"
+         aria-labelledby="createRevueAubeModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'lst_revue_aube' %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createRevueAubeModalLabel">
+                            Créer une nouvelle Revue Aube</h5>
+                        <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ form.as_p }}
+                                        <!-- Labels Grilles -->
+              <div class="card border shadow-sm rounded-4 p-4 mb-4">
+                <h6 class="fw-semibold mb-3">Labels Grilles</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label for="total_aubes" class="form-label">* Flux Total</label>
+                    <input type="text" class="form-control" id="total_aubes" name="total_aubes" value="RM1" placeholder="Ex: RM1">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="primaire_aubes" class="form-label">* Flux Primaire</label>
+                    <input type="text" class="form-control" id="primaire_aubes" name="primaire_aubes">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="secondaire_aubes" class="form-label">* Flux Secondaire</label>
+                    <input type="text" class="form-control" id="secondaire_aubes" name="secondaire_aubes">
+                  </div>
+                </div>
+              </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">Créer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            $('#tablerevueaube').DataTable({
+                order: [[0, 'asc']],
+            });
+        });
+    </script>
+{% endblock %}

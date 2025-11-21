@@ -1,0 +1,591 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+
+
+
+<h2 class="text-center">Revue Veine : {{ revue_veine.name }}</h2>
+<br>
+<div class="card" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); border: solid black 2px">
+      <div class="card-header" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">
+    Gestion des BSAM
+  </div>
+   <div class="card-body" style="background-color: #e9ecef;">
+<!-- Bouton Ajouter un BSAM -->
+
+
+<br>
+
+<!-- Modal -->
+<div class="modal fade" id="ajouterBsamModal" tabindex="-1"
+     aria-labelledby="ajouterBsamLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post"
+              action="{% url 'ajouter_bsam' revue_veine.id %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ajouterBsamLabel">Ajouter un
+                        BSAM</h5>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="bsam-path" class="form-label">Chemin du
+                        fichier BSAM :</label>
+                    <input type="text" class="form-control" name="bsam_path"
+                           id="bsam-path"
+                           placeholder="Ex: C:/Users/.../mon_fichier.bsam"
+                           required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Ajouter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.table-white-border td,
+.table-white-border th,
+.table-white-border {
+    border: 1px solid #fff !important;
+}
+</style>
+
+<table id="tablecas"
+       class="table table-bordered table-striped text-center w-100 table-white-border"
+       style="table-layout: fixed; height: auto;">
+
+    <thead>
+    <tr>
+        <th style="width: 60%; border: None">Chemin du cas / bsam</th>
+        <th style="width: 10%; border: None">Actif</th>
+        <th style="width: 20%; border: None">Couleur</th>
+        <th style="width: 20%; border: None">Symbole</th>
+        <th style="width: 20%; border: None">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for cas in cas_list %}
+        <tr data-iso-id="{{ cas.iso_vitesse.id }}"
+            class="align-middle text-center"
+            style="background-color: {{ cas.iso_vitesse.color }}; color: white; word-break: break-all;">
+            
+            <!-- Chemin -->
+            <td class="py-3" style="color: white">{{ cas.bsam_path }}</td>
+        
+            <!-- Statut -->
+            <td class="cas-status" data-id="{{ cas.id }}">
+                {% if cas.used %}
+                    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                {% else %}
+                    <i class="bi bi-x-square-fill text-danger fs-3"></i>
+                {% endif %}
+            </td>
+        
+            <!-- Couleur -->
+            <td>
+                <select class="form-select text-center select-couleur-mini mx-auto"
+                        data-iso-id="{{ cas.iso_vitesse.id }}"
+                        style="background-color: {{ cas.iso_vitesse.color }}; color: white"
+                        onchange="updateIsovitesseColor({{ cas.iso_vitesse.id }}, this.value)">
+                    {% for color_code, color_label in color_options.items %}
+                        <option value="{{ color_code }}"
+                                style="background-color: {{ color_code }}; font-weight: bold;"
+                                {% if cas.iso_vitesse.color == color_code %}selected{% endif %}>
+                            {{ color_label.fr }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+        
+            <!-- Symbole -->
+            <td>
+                <select class="form-select text-center select-symbole-mini mx-auto"
+                        data-iso-id="{{ cas.iso_vitesse.id }}"
+                        style="background-color: {{ cas.iso_vitesse.color }}; color: white;"
+                        onchange="updateIsovitesseSymbol({{ cas.iso_vitesse.id }}, this.value)">
+                    {% for symbol_code, symbol_label in symbol_options.items %}
+                        <option value="{{ symbol_code }}"
+                                {% if cas.iso_vitesse.marker == symbol_code %}selected{% endif %}>
+                            {{ symbol_label.fr }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+        
+            <!-- Actions -->
+            <td>
+                <div class="d-flex justify-content-center gap-1">
+                    <button type="button"
+                            class="btn btn-primary btn-sm toggle-used"
+                            data-id="{{ cas.id }}"
+                            data-url="{% url 'active_item' 'cas' cas.id %}"
+                            title="{% if cas.used %}Désactiver{% else %}Activer{% endif %}">
+                        {% if cas.used %}
+                            <i class="bi bi-eye-slash"></i>
+                        {% else %}
+                            <i class="bi bi-eye"></i>
+                        {% endif %}
+                    </button>
+        
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            onclick="copyToClipboard('{{ cas.repertory|escapejs }}')"
+                            title="Ouvrir le dossier du cas"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top">
+                        <i class="bi bi-folder"></i>
+                    </button>
+        
+                    <form method="post"
+                          action="{% url 'remove_bsam' revue_veine.id cas.id %}"
+                          class="m-0 p-0 d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce BSAM ?');"
+                                title="Supprimer">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+
+    {% endfor %}
+    </tbody>
+</table>
+
+<button class="btn btn-info btn rounded-pill px-3" data-bs-toggle="modal"data-bs-target="#ajouterBsamModal">
+    <i class="bi bi-plus-circle me-1"></i> Ajouter un BSAM
+    </button>
+       </div>   </div>
+       <br>
+<a id="traceVeineBtn"
+   href="{% url 'download_pdf_trace_veine' revue_veine.id %}"
+   class="btn btn-success">
+    <i class="bi bi-play-circle me-1"></i> Tracer la Veine
+</a>
+
+<!-- Bouton pour télécharger le graphique -->
+<button type="button" class="btn btn-success" data-bs-toggle="modal"
+        data-bs-target="#confirmDownloadModal">
+    <i class="bi bi-play-circle me-1"></i> Lancer une Revue Veine
+</button>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="confirmDownloadModal" tabindex="-1"
+     role="dialog" aria-labelledby="confirmDownloadModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post"
+                  action="{% url 'export_graph_detais_bsam' revue_veine.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDownloadModalLabel">
+                        Revue Veine</h5>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Hauteurs de veine:</label>
+
+                        <!-- Champs pré-remplis et modifiables avec boutons de suppression -->
+                        <div class="input-group mb-2">
+                            <input type="number" name="hauteur_base_1"
+                                   class="form-control" value="0" step="0.1"
+                                   min="0" max="1">
+                            <button type="button" class="btn btn-danger"
+                                    onclick="this.parentNode.remove();">✖
+                            </button>
+                        </div>
+
+                        <div class="input-group mb-2">
+                            <input type="number" name="hauteur_base_2"
+                                   class="form-control" value="0.5"
+                                   step="0.1" min="0" max="1">
+                            <button type="button" class="btn btn-danger"
+                                    onclick="this.parentNode.remove();">✖
+                            </button>
+                        </div>
+
+                        <div class="input-group mb-2">
+                            <input type="number" name="hauteur_base_3"
+                                   class="form-control" value="1" step="0.1"
+                                   min="0" max="1">
+                            <button type="button" class="btn btn-danger"
+                                    onclick="this.parentNode.remove();">✖
+                            </button>
+                        </div>
+
+                        <label class="form-label mt-3">Possibilité d'ajouter
+                            jusqu'à 3
+                            hauteurs en plus (entre 0 et 1) :</label>
+
+                        <!-- Inputs pour les valeurs personnalisées (entre 0 et 1) -->
+                        <input type="number" name="hauteur_base_4"
+                               class="form-control mt-2"
+                               placeholder="Hauteur personnalisée 1 (optionnel)"
+                               step="0.1" min="0" max="1">
+
+                        <input type="number" name="hauteur_base_5"
+                               class="form-control mt-2"
+                               placeholder="Hauteur personnalisée 2 (optionnel)"
+                               step="0.1" min="0" max="1">
+                        <input type="number" name="hauteur_base_6"
+                               class="form-control mt-2"
+                               placeholder="Hauteur personnalisée 3 (optionnel)"
+                               step="0.1" min="0" max="1">
+                    </div>
+                </div>
+
+
+                <div class="modal-footer">
+                    <!-- Ajout du lien Django directement ici -->
+
+                          <button type="submit" id="revueVeineBtn" class="btn btn-success btn-lg ms-3" style="border-color:#031633;">
+        <i class="bi bi-play-circle me-1"></i> Générer
+      </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Copier Repertoire de travail -->
+<button onclick="copyToClipboard('{{ revue_veine.directory|escapejs }}')" 
+        class="btn btn-primary"
+        style="border-width: 2px; padding: 8px 14px; font-weight: 500;" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Lancer une revue pour avoir un export excel">
+    
+    <i class="bi bi-folder"></i> 
+    <span>Dossier de travail</span>
+
+    <span class="badge bg-secondary" style="font-size: 0.75rem;" >
+        Depôt Export Excel
+    </span>
+</button>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const traceBtn = document.getElementById('traceVeineBtn');
+  const originalText = traceBtn.innerHTML;
+
+  traceBtn.addEventListener('click', async (e) => {
+    e.preventDefault(); // on contrôle le download
+    const url = traceBtn.getAttribute('href');
+
+    // (optionnel) bloquer si aucun cas actif
+    // const nbActifs = document.querySelectorAll('.cas-status i.bi-check-circle-fill').length;
+    // if (nbActifs === 0) { alert('Aucun cas actif !'); return; }
+
+    // UX: spinner
+    traceBtn.disabled = true;
+    traceBtn.classList.add('disabled');
+    traceBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Génération...';
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        // Si cross-domain avec cookies, décommente:
+        // credentials: 'include',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!response.ok) throw new Error('Erreur serveur');
+
+      // Récupère le nom de fichier depuis Content-Disposition si présent
+      const dispo = response.headers.get('Content-Disposition') || '';
+      let filename = 'trace_veine.pdf';
+      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i);
+      if (match) filename = decodeURIComponent(match[1] || match[2]);
+
+      // Transforme en Blob et déclenche le téléchargement
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la génération ou du téléchargement du fichier.");
+    } finally {
+      // ✅ Restaure le bouton dès que le fichier est prêt (ou en cas d’erreur)
+      traceBtn.disabled = false;
+      traceBtn.classList.remove('disabled');
+      traceBtn.innerHTML = originalText;
+    }
+  });
+});
+</script>
+
+    
+<!-- button couleur -->
+<script>
+    // Changer la couleur (MAJ fond collapse ET groupe de boutons)
+    function updateIsovitesseColor(isoId, color) {
+        fetch("{% url 'update_color_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: "color_isovitesse=" + encodeURIComponent(color)
+        })
+            .then(response => {
+                if (response.ok) {
+                    // MAJ tous les boutons/badges portant le data-iso-id concerné
+                    document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
+                        // On évite de toucher au collapse principal qui reste transparent
+                        if (el.id !== 'isovitesse' + isoId) {
+                            el.style.backgroundColor = color;
+                            el.style.transition = "background 0.1s, border-color 0.1s";
+                        }
+                    });
+
+                } else {
+                    alert("Erreur lors de la mise à jour !");
+                }
+            })
+            .catch(() => alert("Erreur réseau."));
+    }
+</script>
+
+<!-- Changer le symbole -->
+<script>
+    function updateIsovitesseSymbol(isoId, symbol) {
+        fetch("{% url 'update_symbol_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: "symbole_isovitesse=" + encodeURIComponent(symbol)
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                // Ici tu peux forcer l’affichage sans attendre de data
+                // Optionnel : mettre à jour l’UI côté JS selon la valeur sélectionnée
+                const select = document.querySelector('.select-symbole-mini[data-iso-id="' + isoId + '"]');
+                if (select) {
+                    const badge = document.getElementById('iso-vitesse-symbol-' + isoId);
+                    if (badge) badge.textContent = select.selectedOptions[0].textContent;
+                }
+            })
+            .catch(() => alert("Erreur réseau."));
+    }
+
+</script>
+
+<!-- Activer/Désactiver un cas -->
+<script>
+// 1) CSRF fallback si non défini ailleurs
+(function ensureCsrf(){
+  if (typeof window.CSRF_TOKEN === 'undefined') {
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    window.CSRF_TOKEN = getCookie('csrftoken');
+  }
+})();
+
+// 2) Handler robuste
+$(document).ready(function () {
+  $('.toggle-used').on('click', function () {
+    const button  = $(this);
+    const casId   = button.data('id');
+    const url     = button.data('url');
+
+    // Évite le spam clic
+    if (button.prop('disabled')) return;
+
+    // Sauvegarde état UI courant
+    const icon        = button.find('i');
+    const hadEyeSlash = icon.hasClass('bi-eye-slash');
+    const originalHtml = button.html();
+    const originalTitle = button.attr('title');
+
+    {#// UX: spinner + disable#}
+    {#button.prop('disabled', true)#}
+    {#      .attr('aria-pressed', 'true')#}
+    {#      .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');#}
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      headers: { 'X-CSRFToken': window.CSRF_TOKEN },
+      success: function (data) {
+        if (!data || !data.success) {
+          // Rollback
+          button.html(originalHtml).prop('disabled', false).attr('aria-pressed', 'false');
+          return;
+        }
+
+        // Met à jour l’icône du bouton
+        if (data.used) {
+          icon.removeClass('bi-eye').addClass('bi-eye-slash');
+          button.attr('title', 'Désactiver');
+        } else {
+          icon.removeClass('bi-eye-slash').addClass('bi-eye');
+          button.attr('title', 'Activer');
+        }
+
+        // Cellule statut (icône ligne)
+        const statusCellIcon = $(`.cas-status[data-id="${casId}"] i`);
+        if (data.used) {
+          statusCellIcon
+            .removeClass('bi-x-square-fill text-danger')
+            .addClass('bi-check-circle-fill text-success');
+        } else {
+          statusCellIcon
+            .removeClass('bi-check-circle-fill text-success')
+            .addClass('bi-x-square-fill text-danger');
+        }
+
+        // Restaure le bouton (sans spinner)
+        button.html(icon).prop('disabled', false).attr('aria-pressed', 'false');
+      },
+      error: function () {
+        // Rollback complet (y compris eye/eye-slash si on l’a déjà modifié par erreur)
+        if (hadEyeSlash) {
+          icon.removeClass('bi-eye').addClass('bi-eye-slash');
+        } else {
+          icon.removeClass('bi-eye-slash').addClass('bi-eye');
+        }
+        button.attr('title', originalTitle)
+              .html(originalHtml)
+              .prop('disabled', false)
+              .attr('aria-pressed', 'false');
+        alert('Erreur réseau ou CSRF. Réessayez.');
+      }
+    });
+  });
+
+  // (Optionnel) Tooltips Bootstrap si présents ailleurs dans la page
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+});
+</script>
+
+<!-- ouvrir dossier -->
+<script>
+function copyToClipboard(text) {
+    // Copie dans le presse-papier
+    navigator.clipboard.writeText(text).then(function() {
+        afficherNotif2("Copié dans le presse-papier : " + text);
+    }, function() {
+        afficherNotif2("Erreur lors de la copie !");
+    });
+}
+
+function afficherNotif2(message) {
+    let notif = document.getElementById('custom-notif');
+    if (!notif) {
+        notif = document.createElement('div');
+        notif.id = 'custom-notif';
+        notif.style.position = 'fixed';
+        notif.style.top = '20px';
+        notif.style.right = '20px';
+        notif.style.minWidth = '250px';
+        notif.style.zIndex = 99999;
+        notif.style.padding = '16px 18px';
+        notif.style.borderRadius = '12px';
+        notif.style.fontSize = '1rem';
+        notif.style.color = '#fff';
+        notif.style.fontWeight = "bold";
+        notif.style.background = "#471448";
+        notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
+        document.body.appendChild(notif);
+    }
+    notif.innerHTML = message;
+    notif.style.display = 'block';
+    
+    // Disparition auto après 2,5 secondes
+    setTimeout(function() {
+        notif.style.display = "none";
+    }, 2500);
+}
+</script>
+
+{% if messages %}
+  <script>
+    {% for message in messages %}
+      alert("{{ message|escapejs }}");
+    {% endfor %}
+  </script>
+{% endif %}
+
+{#boutton generer revue#}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('confirmDownloadModal');
+  const form  = modal.querySelector('form');
+  const btn   = modal.querySelector('#revueVeineBtn');
+  const originalText = btn.innerHTML;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Empêche le rechargement
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération...';
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: new FormData(form)
+      });
+
+      if (!response.ok) throw new Error('Erreur serveur');
+
+      // 🔹 Récupère le nom du fichier depuis Content-Disposition
+      const dispo = response.headers.get('Content-Disposition') || '';
+      let filename = 'RevueVeine.html';
+      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i);
+      if (match) filename = decodeURIComponent(match[1] || match[2]);
+
+      // 🔹 Récupère le contenu HTML
+      const htmlContent = await response.text();
+
+      // 🔹 Crée un blob et déclenche le téléchargement
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      // 🔹 Ferme la modal une fois le fichier prêt
+      const bsModal = bootstrap.Modal.getInstance(modal);
+      if (bsModal) bsModal.hide();
+
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la génération ou du téléchargement du fichier.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  });
+});
+</script>
+
+
+
+{% endblock %}

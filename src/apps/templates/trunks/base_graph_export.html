@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ etat.name }}</title>
+
+    <!-- CSS Bokeh -->
+    <link href="https://cdn.bokeh.org/bokeh/release/bokeh-3.1.0.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.1.0.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Bootstrap pour la mise en page -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- JavaScript Bokeh -->
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.1.0.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.1.0.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.1.0.min.js"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            font-size: 1.2rem;
+        }
+
+        main {
+            padding: 20px 150px 20px 150px;
+        }
+
+        .section-graph {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #343a40;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            text-align: center; /* Centre le contenu texte */
+        }
+        .section-cas {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #343a40;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        section {
+            transform: scale(1); /* Réduit les sections à 75 % */
+            transform-origin: top center; /* Centre horizontalement les sections */
+            margin: 20px auto; /* Centre les sections dans la page */
+            background-color: #ffffff; /* Fond blanc pour les sections */
+            border-radius: 10px; /* Coins arrondis */
+            padding: 15px; /* Espacement interne */
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Ajoute une ombre douce */
+        }
+
+        .legend-container {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        ul {
+            display: flex;
+            flex-direction: column; /* Disposition verticale */
+        }
+
+        ul li {
+            background: linear-gradient(to right, #e3e3e3 0%, #ffffff 100%);
+            color: #333; /* Texte sombre */
+            padding: 8px 16px; /* Espacement interne */
+            margin: 5px 0; /* Espacement entre les éléments */
+            border-radius: 5px; /* Coins légèrement arrondis */
+            width: 100%; /* Largeur uniforme */
+        }
+
+
+        .graph-container {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 30px;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .legend-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            border: 0px solid #ddd;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            display: inline-block;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>Projet : {{ projet }}</h1>
+    <p>Etat du projet: {{ etat }}  -  {{ date }}  -  {{ created_by }}</p>
+</header>
+
+<main>
+    <!-- Section Cas Sélectionnés -->
+{#    <section>#}
+{#        <h2 class="section-cas">Cas Sélectionnés</h2>#}
+{#        <ul>#}
+{#            {% for case in selected_cases %}#}
+{#                <li>{{ case.name }}</li>#}
+{#            {% empty %}#}
+{#                <li>Aucun cas sélectionné</li>#}
+{#            {% endfor %}#}
+{#        </ul>#}
+{#    </section>#}
+
+    <!-- Section Graphiques -->
+    <section>
+        <h2 class="section-graph">Graphiques Perfos 0D</h2>
+        {% for tab in tabs %}
+            <div class="graph-container">
+                <h3>{{ tab.label }}</h3>
+                <div class="legend-container">
+                    {{ tab.legend_html|safe }}
+                </div>
+                <div>
+                    {{ tab.div|safe }}
+                    {{ tab.script|safe }}
+                </div>
+            </div>
+        {% empty %}
+            <p>Aucun graphique disponible.</p>
+        {% endfor %}
+    </section>
+</main>
+
+<footer>
+    <p>Rapport généré by Trunks YRKC2</p>
+</footer>
+
+</body>
+</html>

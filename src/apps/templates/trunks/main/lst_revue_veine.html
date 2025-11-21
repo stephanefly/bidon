@@ -1,0 +1,137 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+        <div class="text-center mb-4">
+    <h2 class="fw-bold">Liste de <span class="text-primary">vos Revues Veine</span></h2>
+    <p class="mt-3">Liste de vos projets </p>
+</div>
+    <br>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#createRevueModal">
+        Nouvelle Revue
+    </button>
+    <br><br>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-warning">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <hr>
+    <table id="tablerevue" class="table table-bordered table-striped">
+        <thead>
+        <th>Titre</th>
+        <th>Créé par</th>
+        <th>Créé le</th>
+        <th>Actions</th>
+        </thead>
+        <tbody>
+        {% for revue_veine in lst_revue_veine %}
+            <tr>
+                {% url 'lst_revue_veine' as url %}
+                <td>
+                    <a href="{{ url }}/{{ revue_veine.id }}">{{ revue_veine.name }}</a>
+                </td>
+                <td>{{ revue_veine.created_by }}</td>
+                <td>{{ revue_veine.created_at }}</td>
+                <td>
+                                        <a data-bs-toggle="modal"
+                       data-bs-target="#renameRevueModal-{{ revue_veine.id }}"
+                       title="Renommer">
+                        <button type="button" class="btn btn-primary btn-sm"><i class="bi bi-pencil-fill"></i>
+              </button>
+                    </a>
+                        <a href="{% url 'delete_revue_veine' revue_veine.id %}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette revue ?');"
+                           title="Supprimer">
+<i class="bi bi-trash-fill"></i>
+              </a>
+
+
+                                        <!-- Rename Modal pour chaque revue -->
+                <div class="modal fade"
+                     id="renameRevueModal-{{ revue_veine.id }}" tabindex="-1"
+                     aria-labelledby="renameRevueModalLabel-{{ revue_veine.id }}"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post"
+                                  action="{% url 'rename_revue_veine' revue_veine.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title"
+                                        id="renameRevueModalLabel-{{ revue_veine.id }}">
+                                        Renommer la revue : {{ revue_veine.title }}
+                                    </h5>
+                                    <button type="button" class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-floating">
+                                        <input type="text" name="new_name"
+                                               class="form-control"
+                                               id="floatingNewName-{{ revue_veine.id }}"
+                                               placeholder="Nouveau nom du Projet"
+                                               required>
+                                        <label for="floatingNewName-{{ revue_veine.id }}">Nouveau
+                                            nom du Projet</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Annuler
+                                    </button>
+                                    <button type="submit"
+                                            class="btn btn-primary">Renommer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+        <!-- Modal -->
+    <div class="modal fade" id="createRevueModal" tabindex="-1"
+         aria-labelledby="createRevueModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'lst_revue_veine' %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createRevueModalLabel">
+                            Créer une nouvelle RevueVeine</h5>
+                        <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">Créer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            $('#tablerevue').DataTable({
+                order: [[0, 'asc']],
+            });
+        });
+    </script>
+{% endblock %}

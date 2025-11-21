@@ -1,0 +1,135 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+    <div class="text-center mb-4">
+    <h2 class="fw-bold">Liste de <span class="text-primary">vos Projets</span></h2>
+    <p class="mt-3">Liste de vos projets Perfo 0D</p>
+</div>
+    <br>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#createProjectModal">
+        Nouveau Projet
+    </button>
+    <br>    <br>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-warning">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                        aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <hr>
+    <table id="tableprojet" class="table table-bordered table-striped">
+        <thead>
+        <th>Nom</th>
+        <th>Créé par</th>
+        <th>Actions</th>
+        </thead>
+        <tbody>
+        {% for projet in lst_projets %}
+            <tr>
+                {% url 'lst_projets' as url %}
+                <td><a href="{{ url }}/{{ projet.id }}">{{ projet.name }}</a>
+                </td>
+                <td>{{ projet.created_by }}</td>
+                <td>
+                                        <a data-bs-toggle="modal"
+                       data-bs-target="#renameProjetModal-{{ projet.id }}"
+                       title="Renommer">
+<button type="button" class="btn btn-primary btn-sm"><i class="bi bi-pencil-fill"></i>
+</button>
+                    </a>
+                    <a href="{% url 'delete_projet' projet.id %}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ?');"
+                       title="Supprimer">
+                        <i class="bi bi-trash-fill"></i>
+                    </a>
+
+                </td>
+                <!-- Rename Modal pour chaque état -->
+                <div class="modal fade" id="renameProjetModal-{{ projet.id }}"
+                     tabindex="-1"
+                     aria-labelledby="renameProjetModalLabel-{{ projet.id }}"
+                     aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post"
+                                  action="{% url 'rename_projet' projet.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title"
+                                        id="renameProjetModalLabel-{{ projet.id }}">
+                                        Renommer le projet
+                                        : {{ projet.name }}</h5>
+                                    <button type="button" class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-floating">
+                                        <input type="text" name="new_name"
+                                               class="form-control"
+                                               id="floatingNewName-{{ projet.id }}"
+                                               placeholder="Nouveau nom du Projet"
+                                               value="{{ projet.name }}"
+                                               required>
+                                        <label for="floatingNewName-{{ projet.id }}">Nouveau
+                                            nom du Projet</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Annuler
+                                    </button>
+                                    <button type="submit"
+                                            class="btn btn-primary">Renommer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <!-- Modal -->
+    <div class="modal fade" id="createProjectModal" tabindex="-1"
+         aria-labelledby="createProjectModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'lst_projets' %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createProjectModalLabel">
+                            Créer un Nouveau Projet</h5>
+                        <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">Créer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#tableprojet').DataTable({
+                order: [[0, 'asc']],
+            });
+        });
+    </script>
+
+{% endblock %}

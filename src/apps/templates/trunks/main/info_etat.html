@@ -1,0 +1,177 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+
+<nav aria-label="breadcrumb">
+   <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'lst_projets' %}">Liste des Projets</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'info_projet' projet.id %}">{{ projet.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ etat.name }}</li>
+   </ol>
+</nav>
+<hr>
+{% if etat.freeze %}
+<div class="alert alert-info" role="info">
+   <h4>{{ etat.name }} : Etat Gelé</h4>
+</div>
+<br>
+{% endif %}
+<style>
+.tabs {
+  font-family: "Segoe UI", sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* On masque uniquement les radios d'onglets */
+input#tab1,
+input#tab2 {
+  display: none;
+}
+input#tab3 {
+  display: none;
+}
+
+.tab-labels {
+  display: flex;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tab-labels label {
+  flex: 1;
+  padding: 16px 20px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-labels label:hover {
+  background: #ccc6cc;
+  color: #000000;
+}
+
+.tab-labels label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: 3px;
+  width: 0;
+  background: #6366f1; /* Indigo-500 */
+  transition: width 0.3s;
+}
+
+/* Onglet actif : couleur et soulignement */
+input#tab1:checked ~ .tab-labels label[for="tab1"],
+input#tab2:checked ~ .tab-labels label[for="tab2"] {
+  color: #111827;
+  font-weight: 600;
+}
+input#tab2:checked ~ .tab-labels label[for="tab3"] {
+  color: #111827;
+  font-weight: 600;
+}
+
+input#tab1:checked ~ .tab-labels label[for="tab1"]::after,
+input#tab2:checked ~ .tab-labels label[for="tab2"]::after {
+  width: 50%;
+}
+input#tab3:checked ~ .tab-labels label[for="tab3"]::after {
+  width: 50%;
+}
+
+.tab-contents {
+  background: #ffffff;
+  padding: 24px;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0.7;}
+  to {opacity: 1;}
+}
+
+input#tab1:checked ~ .tab-contents #content1,
+input#tab2:checked ~ .tab-contents #content2 {
+  display: block;
+}
+input#tab3:checked ~ .tab-contents #content3 {
+  display: block;
+}
+</style>
+
+
+<div class="tabs">
+  <!-- Onglets -->
+  <input type="radio" name="tabs" id="tab1"
+         {% if not request.GET.tab or request.GET.tab == "1" %}checked{% endif %}>
+  <input type="radio" name="tabs" id="tab2"
+         {% if request.GET.tab == "2" %}checked{% endif %}>
+  <input type="radio" name="tabs" id="tab3"
+         {% if request.GET.tab == "3" %}checked{% endif %}>
+
+  <div class="tab-labels">
+    <label for="tab1">Cas Cannelle</label>
+    <label for="tab2">Cas Bsam</label>
+  <label for="tab3">Courbe Utilisateur</label>
+  </div>
+
+  <!-- Contenu -->
+  <div class="tab-contents">
+    <div id="content1" class="tab-content">
+    <!-- GESTION DES CAS CANNELLE -->
+    {% include 'trunks/info_etat_componente/add_cas_cannelle.html' %}
+    </div>
+    <div id="content2" class="tab-content">
+    <!-- GESTION DES CAS BSAM -->
+    {% include 'trunks/info_etat_componente/add_bsam.html' %}
+    </div>
+          <div id="content3" class="tab-content">
+    <!-- GESTION DES COURBE UTILATEUR -->
+    {% include 'trunks/info_etat_componente/add_user_curve.html' %}
+    </div>
+  </div>
+</div>
+    
+    
+<!-- Liste des Isovitesse -->
+{% include 'trunks/info_etat_componente/lst_isovitesse.html' %}
+    
+    
+    
+<div class="d-flex align-items-center gap-3 my-3" id="all-case-used-counter" data-count="{{ all_case_used }}">
+    <!--BOUTON DÉCLENCHEUR -->
+    <button id="btn-loader" type="button" class="btn btn-success btn-lg ms-3" onclick="openConfirmationModal()">
+        <i class="bi bi-play-circle me-1"></i> Tracer Perfos0D
+    </button>
+<!--COMPTEUR AFFICHÉ -->
+    <span class="fs-5">
+        <span class="badge bg-secondary px-3 py-2 d-flex align-items-center" style="font-size: 1.1rem;">
+            <i class="bi bi-check2-square me-2" style="font-size:1.2rem;"></i>
+            <span id="badge-value" class="fw-bold">{{ all_case_used }}</span>
+            <span class="ms-2" style="font-weight:400;">cas sélectionnés</span>
+        </span>
+    </span>
+    <span id="used-count" style="display:none;">{{ all_case_used }}</span>
+</div>
+
+    
+<!--FORMULAIRE CACHÉ À SOUMETTRE -->
+<form id="realSubmitForm" method="post" action="{% url 'graph_perfo_0d' etat.id %}">
+   {% csrf_token %}
+</form>
+
+<!--MODALE DYNAMIQUE -->
+{% include 'trunks/info_etat_componente/modal_dynamique.html' %}
+
+    
+{% endblock %}

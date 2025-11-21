@@ -1,0 +1,521 @@
+    {% extends 'trunks/main/base.html' %}
+    {% block content %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Styles boutons -->
+    <style>
+    .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; }
+    .btn-primary:hover { background-color: #0056b3; }
+    .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; }
+    .btn-danger:hover { background-color: #c82333; }
+    .graph-row { margin-bottom: 10px; }
+    .legend-container { display: flex; align-items: center; background-color: white; border-color: #0a0a0a }
+    .legend-item { display: flex; align-items: center; margin-right: 10px; }
+    .legend-color { width: 15px; height: 15px; margin-right: 5px; display: inline-block; }
+    .btn-bleu-nuit {background-color: #032155; color: #ffffff; border: #031633 solid 2px;}
+    .btn-bleu-nuit:hover, .btn-bleu-nuit:focus {background-color: #093c85; color: #ffffff; border-color: #022047;}
+    </style>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'lst_projets' %}">Liste des Projets</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'info_projet' projet.id %}">{{ projet.name }}</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'info_etat' etat.id %}">{{ etat.name }}</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Perfo 0D</li>
+       </ol>
+    </nav>
+
+    <h2 style="text-align: center;">Graphique Performance 0D</h2>
+    <br>
+
+    <!-- Onglets -->
+    <ul class="nav nav-pills mb-3 d-flex justify-content-center" id="pills-tab" role="tablist">
+       {% for tab in tabs %}
+       <li class="nav-item" role="presentation">
+          <button class="nav-link {% if tab.active %}active{% endif %}"
+             id="{{ tab.id }}-tab"
+             data-bs-toggle="pill"
+             data-bs-target="#{{ tab.id }}"
+             type="button" role="tab"
+             aria-controls="{{ tab.id }}"
+             aria-selected="{% if tab.active %}true{% else %}false{% endif %}">
+             {{ tab.label }}
+          </button>
+       </li>
+       {% endfor %}
+    </ul>
+
+    <!-- Contenu des onglets -->
+    <div class="tab-content" id="pills-tabContent">
+       {% for tab in tabs %}
+       <div class="tab-pane fade {% if tab.active %}show active{% endif %}" id="{{ tab.id }}" role="tabpanel">
+          <form method="POST">{% csrf_token %}
+             <div class="aaa" id="graph-container-{{ tab.id }}">
+                <div class="row graph-row" id="graph-{{ tab.id }}-1">
+                   <div class="legend-container">{{ tab.legend_html|safe }}</div>
+                   {{ tab.div|safe }}
+                   {{ tab.script|safe }}
+                </div>
+             </div>
+          </form>
+       </div>
+       {% endfor %}
+
+       <!-- Section Action -->
+       <div class="row text-center" style="margin-top: 10px; border: #031633 solid 2px; border-radius: 20px; padding: 10px; background-color: #b8dafb ;">
+          <h2>Lancer une Action</h2><br>
+          <div>
+             <h5 style="text-align: left;">Cas sélectionnés :</h5>
+             <div class="col-1">
+                <ul id="selected-cases"></ul>
+                <input type="hidden" id="selected-cases-hidden" value="[]">
+                <input type="hidden" id="selected-cases-names" value="[]">
+             </div>
+             <br>
+
+             <div class="row text-center">
+                <!-- GenepiAuto -->
+                <div class="col">
+                   <button id="btn-genepi" type="button" class="btn btn-bleu-nuit action-btn"
+                           style="border: #031633 solid 2px;" data-action="genepi">
+                      GenepiAuto
+                   </button>
+                </div>
+
+                <!-- ConvAuto -->
+                <div class="col">
+                   <form id="btn-convauto-form" method="POST" action="{% url 'trace_conv' etat.id %}">{% csrf_token %}
+                {% csrf_token %}
+                <button id="btn-convauto"
+                        type="button"
+                        class="btn btn-bleu-nuit action-btn"
+                        style="border: #031633 solid 2px;"
+                        data-action="convauto"
+                        data-loading-text="Traitement...">
+                  ConvAuto
+                </button>
+                   </form>
+                </div>
+
+                <!-- Revue Bsam -->
+                <div class="col">
+                    <button id="btn-create_revue_veine"
+                            type="button"
+                            class="btn btn-bleu-nuit action-btn"
+                            style="border: #031633 solid 2px;"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            title="Créer une revue veine avec le Bsam du Cas"
+                            data-url="{% url 'create_revue_veine' etat.id %}">
+                        Revue Veine
+                    </button>
+                </div>
+
+                <!-- Répertoire -->
+               <div class="col">
+                    <div id="workDir" style="display: none;">{{ etat.work_directory }}</div>
+                                <!-- Copier Repertoire de travail -->
+<button onclick="copyToClipboard('{{ etat.work_directory|escapejs }}')" 
+        class="btn btn-primary"
+        style="border-width: 2px; padding: 8px 14px; font-weight: 500;">
+    
+    <i class="bi bi-folder"></i> 
+    <span>Dossier de travail</span>
+
+</button>
+                </div>
+
+                <!-- Télécharger Graphs -->
+                <div class="col">
+                   <form method="POST" action="{% url 'download_graph' etat.id %}">{% csrf_token %}
+                      <button type="submit" class="btn btn-success" style="border: #031633 solid 2px;">
+                          Export Perfos0D</button>
+                   </form>
+                </div>
+             </div>
+          </div>
+       </div>
+    </div>
+
+    <!-- Modale GENEPI -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form method="POST" action="{% url 'action1' etat.id %}" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <div class="modal-content shadow rounded-4">
+            <!-- Header -->
+            <div class="modal-header border-bottom-0">
+              <h5 class="modal-title" id="confirmationModalLabel">Mise en donnée de GenepiAuto</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body pt-0">
+              <!-- Titre -->
+              <div class="mb-4">
+                <label for="titre" class="form-label fw-semibold">Nom de la présentation</label>
+                <input type="text" class="form-control card border shadow-sm rounded-2" id="titre" name="titre" value="{{ etat.name }}" required>
+              </div>
+
+              <!-- Formats d’export -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Exporter en</label>
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="ExportPDF" name="ExportPDF" checked>
+                      <label class="form-check-label" for="ExportPDF">PDF</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="ExportExcel" name="ExportExcel" checked>
+                      <label class="form-check-label" for="ExportExcel">Excel</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="ExportPPT" name="ExportPPT">
+                      <label class="form-check-label" for="ExportPPT">PPT</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chemin script -->
+              <div class="mb-4">
+                <label for="mise_en_forme" class="form-label fw-semibold">Chemin vers le fichier de mise en forme de la présentation (GenepiAuto_Dico.py)</label>
+                <input type="text" class="form-control card border shadow-sm rounded-2 " id="mise_en_forme" name="mise_en_forme"
+                  value="\\nas23\YRKC\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\03_Postprocessing\TRUNKS\codes\GenepiAuto\GENEPIAuto_Dico.py"
+                  required>
+              </div>
+
+              <!-- Labels Grilles -->
+              <div class="card border shadow-sm rounded-4 p-4 mb-4">
+                <h6 class="fw-semibold mb-3">Labels Grilles</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label for="total_aubes" class="form-label">* Flux Total</label>
+                    <input type="text" class="form-control" id="total_aubes" name="total_aubes" value="RM1" placeholder="Ex: RM1">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="primaire_aubes" class="form-label">* Flux Primaire</label>
+                    <input type="text" class="form-control" id="primaire_aubes" name="primaire_aubes">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="secondaire_aubes" class="form-label">* Flux Secondaire</label>
+                    <input type="text" class="form-control" id="secondaire_aubes" name="secondaire_aubes">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Options supplémentaires -->
+              <div class="row g-3">
+                <div class="col-md-6 col-lg-4">
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="RecalageKD" name="RecalageKD" checked>
+                      <label class="form-check-label" for="RecalageKD">Recalage KD</label>
+                    </div>
+                </div>
+                  
+                <div class="col-md-6 col-lg-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="TrierIso" name="TrierIso">
+                    <label class="form-check-label" for="TrierIso">Trier Iso</label>
+                  </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="DetectionCasProcheBSAM" name="DetectionCasProcheBSAM">
+                    <label class="form-check-label" for="DetectionCasProcheBSAM">Détection cas proche BSAM</label>
+                  </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="Mode_Champs" name="Mode_Champs">
+                    <label class="form-check-label" for="Mode_Champs">Mode Champs</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer border-top-0 pt-3">
+              <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+              <button type="submit" class="btn btn-success">Générer</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modale Alerte -->
+    <div class="modal fade" id="selectionRequiredModal" tabindex="-1" aria-labelledby="selectionRequiredModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow rounded-4">
+          <div class="modal-header border-bottom-0">
+            <h5 class="modal-title" id="selectionRequiredModalLabel">Aucun cas sélectionné</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">Veuillez sélectionner au moins un cas avant de lancer cette action.</div>
+          <div class="modal-footer border-top-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Conteneur pour injection dynamique des modales -->
+<div id="modal-container"></div>
+
+
+<script>
+function copyToClipboard(text) {
+    // Copie dans le presse-papier
+    navigator.clipboard.writeText(text).then(function() {
+        afficherNotif2("Copié dans le presse-papier : " + text);
+    }, function() {
+        afficherNotif2("Erreur lors de la copie !");
+    });
+}
+
+function afficherNotif2(message) {
+    let notif = document.getElementById('custom-notif');
+    if (!notif) {
+        notif = document.createElement('div');
+        notif.id = 'custom-notif';
+        notif.style.position = 'fixed';
+        notif.style.top = '20px';
+        notif.style.right = '20px';
+        notif.style.minWidth = '250px';
+        notif.style.zIndex = 99999;
+        notif.style.padding = '16px 18px';
+        notif.style.borderRadius = '12px';
+        notif.style.fontSize = '1rem';
+        notif.style.color = '#fff';
+        notif.style.fontWeight = "bold";
+        notif.style.background = "#471448";
+        notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
+        document.body.appendChild(notif);
+    }
+    notif.innerHTML = message;
+    notif.style.display = 'block';
+    
+    // Disparition auto après 2,5 secondes
+    setTimeout(function() {
+        notif.style.display = "none";
+    }, 2500);
+}
+</script>
+<script>
+// Logique pour actions sur les boutons (GENEPI, ConvAuto, etc.)
+document.addEventListener("DOMContentLoaded", function () {
+    let selectedCases = [];
+
+    // MAJ sélection cas depuis input caché
+    const updateSelectedCases = () => {
+        const hidden = document.getElementById("selected-cases-hidden");
+        if (hidden && hidden.value) {
+            try {
+                selectedCases = JSON.parse(hidden.value);
+            } catch (e) {
+                selectedCases = [];
+            }
+        } else {
+            selectedCases = [];
+        }
+    };
+
+    document.querySelectorAll(".action-btn").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            updateSelectedCases();
+            if (selectedCases.length === 0) {
+                e.preventDefault();
+                const selectionModal = new bootstrap.Modal(document.getElementById('selectionRequiredModal'));
+                selectionModal.show();
+                return;
+            }
+            const action = this.dataset.action;
+            if (action === "genepi") {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                modal.show();
+            } else if (action === "convauto") {
+                e.preventDefault();
+                const form = document.getElementById('btn-convauto-form');
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: form.method,
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+                    }
+                })
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.success) {
+                        afficherNotif("Traitement ConvAuto effectué avec succès !", true);
+                    } else {
+                        afficherNotif("Erreur : " + (data.error || "Une erreur est survenue"), false);
+                    }
+                })
+                .catch(error => {
+                    afficherNotif("Erreur de communication avec le serveur.", false);
+                });
+            }
+        });
+    });
+
+    // Notification simple
+    function afficherNotif(message, success) {
+        let notif = document.getElementById('custom-notif');
+        if (!notif) {
+            notif = document.createElement('div');
+            notif.id = 'custom-notif';
+            notif.style.position = 'fixed';
+            notif.style.top = '20px';
+            notif.style.right = '20px';
+            notif.style.minWidth = '250px';
+            notif.style.zIndex = 99999;
+            notif.style.padding = '12px';
+            notif.style.borderRadius = '8px';
+            notif.style.fontSize = '1.1em';
+            notif.style.color = '#fff';
+            document.body.appendChild(notif);
+        }
+        notif.style.background = success ? '#51005a' : '#ffffff';
+        notif.textContent = message;
+        notif.style.display = 'block';
+        setTimeout(() => { notif.style.display = 'none' }, 2000);
+    }
+
+    // GENERE: pour GenepiAuto, à la soumission, on ajoute aussi les cas sélectionnés
+    const formGenepi = document.querySelector('#confirmationModal form');
+    if (formGenepi) {
+        formGenepi.addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateSelectedCases();
+            const submitBtn = formGenepi.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération en cours...';
+            const formData = new FormData(formGenepi);
+            formData.set('cases_ids', JSON.stringify(selectedCases));
+            fetch(formGenepi.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
+                } else {
+                    alert('Erreur : ' + (data.error || 'Une erreur est survenue'));
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Erreur de communication avec le serveur');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                afficherNotif("Fichier GENEPIAUTO généré !", true);
+            });
+        });
+    }
+});
+
+// Script Revue Veine (modale, création)
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('btn-create_revue_veine');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+        const url = btn.getAttribute('data-url');
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(resp => {
+            if (!resp.ok) {
+                throw new Error("Erreur HTTP " + resp.status);
+            }
+            return resp.text();
+        })
+        .then(html => {
+            const container = document.getElementById('modal-container');
+            container.innerHTML = html;
+            const modalEl = document.getElementById('modalRevueVeine');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            setTimeout(() => bindRevueVeineForm(), 50);
+        })
+        .catch((err) => {
+            console.error("Erreur modale Revue Veine :", err);
+            alert("Erreur de chargement de la modale Revue Veine.");
+        });
+    });
+});
+
+function bindRevueVeineForm() {
+    const form = document.getElementById("form-new-revue");
+    const submitBtn = document.getElementById("btn-new-revue");
+    const errorDiv = document.getElementById("error-revue");
+    if (!form || !submitBtn) return;
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        errorDiv.textContent = "";
+        // AJOUT ICI : on envoie la sélection des cas !
+        let selectedCases = [];
+        try {
+            selectedCases = JSON.parse(document.getElementById("selected-cases-hidden").value || "[]");
+        } catch (err) { selectedCases = []; }
+        const formData = new FormData(form);
+        formData.set('cases_ids', JSON.stringify(selectedCases));
+        const urlPost = form.dataset.url;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const etatId = form.querySelector('[name=etat_id]').value;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Création...';
+        fetch(urlPost, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url; // Redirige vers la nouvelle revue
+            } else if (data.success) {
+                afficherNotif("Nouvelle revue créée avec succès.", true);
+            } else {
+                errorDiv.textContent = data.error || "Erreur inconnue.";
+            }
+        })
+        .catch(() => {
+            errorDiv.textContent = "Erreur de communication avec le serveur.";
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    });
+}
+</script>
+
+        
+
+{% endblock %}

@@ -1,0 +1,148 @@
+<!-- GESTION DES Bsam -->
+<div class="card" style="background-color: #f8f9fa; border: solid black 2px">
+   <div class="card-header" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">
+      <h5>Ajouter des Bsam</h5>
+   </div>
+   <div class="card-body" style="background-color: #e9ecef;">
+      {% if not etat.freeze %}
+      <div class="row">
+      
+         <form method="post" action="{% url 'scan_repertoire' 'bsam' etat.id %}?tab=2">
+            {% csrf_token %}
+            <div class="input-group mb-3">
+               <div class="input-group-prepend">
+                  <span class="input-group-text" id="basic-addon3">Repertoire</span>
+               </div>
+               <input type="text" class="form-control" id="basic-url" name="repertoire_cas_cannelle"
+                  aria-describedby="basic-addon3" placeholder="Scanner dans un premier temps...">
+            </div>
+            <button type="submit" class="btn btn-primary">Scanner</button>
+         </form>
+      </div>
+      {% endif %}
+      <div class="row">
+         {% if etat.bsam_temp_repertory and not etat.freeze %}
+         <div class="alert alert-info" role="info">
+            Repertoire Actuel : <b> {{ etat.bsam_temp_repertory }}</b>
+         </div>
+         {% elif etat.freeze %}
+         {% else %}
+         <div class="alert alert-light" role="alert">
+            Veuillez Scanner un repertoire pour ajouter un ou des Bsam
+         </div>
+         {% endif %}
+         {% if alert %}
+         <div class="alert alert-danger" role="info">
+            <b>{{ alert }}</b>
+         </div>
+         {% endif %}
+         {% if not etat.freeze %}
+         <hr>
+         <div style="padding: 20px;">
+            <form method="POST" action="?tab=2">
+               {% csrf_token %}
+               <!-- Champ de recherche pour la sélection multiple -->
+               <label for="search_query_multiple2">Trouver IsoVitesse (sélection multiple) :</label>
+               <input name="iso_vitess_name2" type="text" id="search_query_multiple2" class="form-control"
+                  placeholder="Tapez un mot-clé..." value="{{ val_name_isovitesse2  }}"
+                  oninput="fetchBsam('search_query_multiple2', 'bsam_list_multiple')">
+               <!-- Formulaire pour sélectionner plusieurs éléments -->
+               <label for="selected_multiple_item2">Sélectionnez les Cas:</label>
+               <select name="selected_multiple_item2" id="bsam_list_multiple"
+                  class="form-select small-select" multiple size="11" style="font-size:10px">
+                  <!-- Les résultats seront insérés ici via AJAX -->
+               </select>
+               <label for="name">Définir un nom:</label>
+               <input type="text" id="name_isovitesse_input" class="form-control"
+                  name="name_isovitesse_input2" value="{{ val_name_isovitesse_input2  }}">
+               <label>Choisir la couleur :</label>
+                        <select name="color_iso_vitesse" id="casColorIso" class="form-select small-select">
+                            {% for color_code, color_label in color_options.items %}
+                            <option value="{{ color_code }}"
+                            style="color: {{ color_code }} ; font-weight: bold;"
+                            {% if cas.color == color_code %}selected{% endif %}>
+                            {{ color_label.fr }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+
+                <label>Choisir le Symbole :</label>
+                <select name="symbole_iso_vitesse" id="casSymboleIso" class="form-select small-select">
+                    {% for symbol_code, symbol_label in symbol_options.items %}
+                        <option value="{{ symbol_code }}">
+                            {{ symbol_label.fr }}
+                        </option>
+                    {% endfor %}
+                </select>
+               <br>
+               <input type="submit" class="btn btn-primary" value="Ajouter">
+            </form>
+         </div>
+         {% endif %}
+      </div>
+   </div>
+</div>
+
+<script>
+    // Fonction pour récupérer les résultats de la recherche via AJAX
+    function fetchBsam(inputId, listId) {
+        const query = document.getElementById(inputId)?.value || '';
+
+        if (query.trim() === '') return; // Ne pas faire de requête si le champ est vide
+
+        fetch("{% url 'search_cas_cannelle' 'bsam' etat.id %}?q=" + encodeURIComponent(query))
+            .then(response => {
+                if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+                return response.json(); // ← Conversion en JSON
+        })
+            .then(data => {
+                const casList = document.getElementById(listId);
+                if (casList) {
+                    casList.innerHTML = '';
+                    data.results.forEach(function (item) {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        option.textContent = item;
+                        casList.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => console.error('Erreur AJAX :', error));
+    }
+
+    // Déclenchement au chargement de la page
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputField = document.getElementById('search_query_multiple2');
+        const listField = document.getElementById('bsam_list_multiple');
+
+        if (inputField && listField) {
+            fetchBsam('search_query_multiple2', 'bsam_list_multiple');
+            inputField.addEventListener('input', function() {
+                fetchBsam('search_query_multiple2', 'bsam_list_multiple');
+            });
+        }
+    });
+</script>
+
+<script>
+   // Fonction pour présélectionner toutes les options du second select
+   window.onload = function () {
+       var multipleSelect = document.getElementById("bsam_list_multiple");
+       if (multipleSelect) {
+           for (var i = 0; i < multipleSelect.options.length; i++) {
+               multipleSelect.options[i].selected = true;
+           }
+       }
+   };
+</script>
+<script>
+   document.addEventListener('DOMContentLoaded', function () {
+       const inputField = document.getElementById('search_query_multiple2');
+       const listField = document.getElementById('bsam_list_multiple');
+
+       if (inputField && listField) {
+           fetchCasCannelle('search_query_multiple2', 'bsam_list_multiple');
+       }
+   });
+</script>

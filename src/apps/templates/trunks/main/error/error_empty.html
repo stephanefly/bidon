@@ -1,0 +1,18 @@
+{% extends 'main/../base.html' %}
+{% block content %}
+
+<nav aria-label="breadcrumb">
+   <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'lst_projets' %}">Liste des Projets</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'info_projet' projet.id %}">{{ projet.name }}</a></li>
+       <li class="breadcrumb-item"><a href="{% url 'info_etat' etat.id %}">{{ etat.name }}</a></li>
+   </ol>
+</nav>
+    <br>
+<h2 style="text-align: center;">Erreur</h2>
+<br>
+<div class="alert alert-warning" role="alert">
+  Aucun Bsam ou Cas n'est activé pour tracer les performence 0D!
+</div>
+
+{% endblock %}

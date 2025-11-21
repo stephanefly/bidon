@@ -1,0 +1,167 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+    
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Bienvenue sur <span class="text-primary">TRUNKS</span></h2>
+        <p class="mt-3">
+            Consultez la documentation :
+            <a href="https://devlab-dev.snm.snecma/public/capsulecore/trunks/trunks/"
+               target="_blank" rel="noopener noreferrer" class="link-info fw-semibold">
+                CapsuleCore by YRKC
+            </a>
+        </p>
+    </div>
+<br>
+    <div>
+        <h3 class="mb-3">Vos projets Perfos0D les plus récents</h3>
+        <table id="tableprojet" class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:70%" >Nom</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for projet in lst_projets %}
+                <tr>
+                    {% url 'lst_projets' as url %}
+                    <td>
+                        <a href="{{ url }}/{{ projet.id }}">
+                            {{ projet.name }}
+                        </a>
+                    </td>
+                    <td class="text-center">
+
+                        <!-- Bouton Renommer -->
+                        <button type="button" class="btn btn-primary btn-sm me-2"
+                                data-bs-toggle="modal" data-bs-target="#renameProjetModal-{{ projet.id }}"
+                                title="Renommer">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+
+                        <!-- Bouton Supprimer -->
+                        <a href="{% url 'delete_projet' projet.id %}"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ?');"
+                           title="Supprimer">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+
+                        <!-- Modal Renommage -->
+                        <div class="modal fade" id="renameProjetModal-{{ projet.id }}" tabindex="-1"
+                             aria-labelledby="renameProjetModalLabel-{{ projet.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="post" action="{% url 'rename_projet' projet.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="renameProjetModalLabel-{{ projet.id }}">
+                                                Renommer le projet : <strong>{{ projet.name }}</strong>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="form-floating">
+                                                <input type="text" name="new_name" class="form-control"
+                                                       id="floatingNewName-{{ projet.id }}"
+                                                       placeholder="Nouveau nom du Projet" required>
+                                                <label for="floatingNewName-{{ projet.id }}">
+                                                    Nouveau nom du Projet
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Annuler</button>
+                                            <button type="submit" class="btn btn-primary">Renommer</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <br>
+    <div>
+        <h3 class="mb-3">Vos Revue Veine les plus récents</h3>
+        <table id="tablerevenu" class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:70%">Nom</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for revue in lst_revue %}
+                <tr>
+                    {% url 'lst_revue_veine' as url %}
+                    <td>
+                        <a href="{{ url }}/{{ revue.id }}">
+                            {{ revue.name }}
+                        </a>
+                    </td>
+                    <td class="text-center">
+
+                        <!-- Bouton Renommer -->
+                        <button type="button" class="btn btn-primary btn-sm me-2"
+                                data-bs-toggle="modal" data-bs-target="#renameRevueModal-{{ revue.id }}"
+                                title="Renommer">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+
+                        <!-- Bouton Supprimer -->
+                        <a href="{% url 'delete_revue_veine' revue.id %}"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer la revue ?');"
+                           title="Supprimer">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+
+                        <!-- Modal Renommage -->
+                        <div class="modal fade" id="renameRevueModal-{{ revue.id }}" tabindex="-1"
+                             aria-labelledby="renameRevueModalLabel-{{ revue.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="post" action="{% url 'rename_projet' revue.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="renameRevueModalLabel-{{ revue.id }}">
+                                                Renommer la Revue : <strong>{{ revue.name }}</strong>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="form-floating">
+                                                <input type="text" name="new_name" class="form-control"
+                                                       id="floatingNewName-{{ revue.id }}"
+                                                       placeholder="Nouveau nom de la Revue" required>
+                                                <label for="floatingNewName-{{ revue.id }}">
+                                                    Nouveau nom de la Revue
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Annuler</button>
+                                            <button type="submit" class="btn btn-primary">Renommer</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}

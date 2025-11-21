@@ -1,0 +1,529 @@
+{% extends 'trunks/main/base.html' %}
+{% load static %}
+{% block content %}
+
+<h2 class="text-center my-3">Shenron : {{ projet_shenron.name }}</h2>
+
+<form method="post" enctype="multipart/form-data" class="container-lg">
+  {% csrf_token %}
+
+  <!-- =========================
+       1) PARAMÈTRES CAS
+  ========================== -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres du Cas</div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+          <tr>
+            <th style="width:260px;">Nom du cas</th>
+            <td><input name="case_name" type="text" class="form-control" required></td>
+          </tr>
+          <tr>
+            <th>Chemin du cas</th>
+            <td>
+              <div class="input-group">
+                <input name="case_path" type="text" class="form-control" placeholder="C:\...">
+                <button type="button" class="btn btn-outline-secondary" id="btn-browse-case">Parcourir</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>Fichier BSAM</th>
+            <td>
+              <div class="input-group">
+                <input name="bsam_file" type="text" class="form-control" placeholder="C:\...\*.bsam">
+                <button type="button" class="btn btn-outline-success" id="btn-read-bsam">Lire BSAM</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =========================
+       2) CONFIGURATION
+  ========================== -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Configuration</div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+          <tr>
+            <th style="width:260px;">Template CannelleAuto</th>
+            <td>
+              <select name="cannelle_template" class="form-select">
+                <option value="CO8P-ARTEMIS-MXCR">CO8P – ARTEMIS – MXCR</option>
+                <option value="GENERIC">Generic</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>Fichier Input (CannelleAuto)</th>
+            <td>
+              <div class="input-group">
+                <input name="cannelle_input" type="text" class="form-control" placeholder="C:\...\CannelleAuto_Input_*.py">
+                <button type="button" class="btn btn-outline-secondary">Parcourir</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>Chemin vers aubages XML</th>
+            <td>
+              <div class="input-group">
+                <input name="xml_path" type="text" class="form-control" placeholder="C:\...\XML">
+                <span class="input-group-text">optionnel</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+        <br>
+      <!-- Aubes à changer -->
+      <div class="p-3 pt-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="fw-semibold">Aubes à changer</div>
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-row">+ Ligne</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="clear-rows">Vider</button>
+          </div>
+        </div>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm table-bordered mb-0" id="blades-table">
+            <thead class="table-light">
+              <tr>
+                <th style="min-width:70px;">Row Index</th>
+                <th>Projet</th>
+                <th>Version</th>
+                <th>Aube</th>
+                <th>Coupe</th>
+                <th>Blade Index</th>
+                <th>Xemp</th>
+                <th>Azimuth</th>
+                <th>Calage</th>
+                <th style="width:56px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- lignes dynamiques -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Plans & Bec -->
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+<tr>
+  <th style="width:260px;">Numéro plan Inlet / Outlet auto</th>
+  <td>
+    <div class="form-check">
+      <input name="plan_inlet_outlet_auto" id="auto-plans" class="form-check-input" type="checkbox">
+      <label for="auto-plans" class="form-check-label"></label>
+    </div>
+  </td>
+</tr>
+
+<tr>
+  <th>Numéro plan Inlet</th>
+  <td><input id="plan-inlet" name="plan_inlet" type="text" class="form-control" placeholder="ex: 1"></td>
+</tr>
+<tr>
+  <th>Numéro plan Outlet</th>
+  <td><input id="plan-outlet" name="plan_outlet" type="text" class="form-control" placeholder="ex: 3"></td>
+</tr>
+<tr>
+  <th>Numéro plan Outlet (secondaire)</th>
+  <td><input id="plan-outlet-sec" name="plan_outlet_secondary" type="text" class="form-control" placeholder="optionnel"></td>
+</tr>
+
+          <tr>
+            <th>Définition du Bec (XR)</th>
+            <td>
+              <div class="input-group">
+                <input name="bec_xr_file" type="text" class="form-control" placeholder="C:\...\*.xr">
+                <button type="button" class="btn btn-outline-secondary">Parcourir</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =========================
+       3) MAILLAGE
+  ========================== -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Maillage</div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+          <tr>
+            <th style="width:260px;">Input (GASAuto ou .tri)</th>
+            <td>
+              <div class="input-group">
+                <input name="mesh_input" type="text" class="form-control" placeholder="C:\...\GASAuto_Input_*.py ou *.tri">
+                <button type="button" class="btn btn-outline-secondary">Parcourir</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th>AGS Batch mode</th>
+  <td>
+    <div class="form-check">
+      <input name="Batch_mode" id="Batch_mode" class="form-check-input" type="checkbox">
+      <label for="Batch_mode" class="form-check-label"></label>
+    </div>
+  </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =========================
+       4) PARAMÈTRES NUMÉRIQUES
+  ========================== -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Numériques</div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0">
+        <tbody>
+          <tr>
+            <th style="width:260px;">Accel. multiplicité</th>
+            <td>              <select name="accel_multi" class="form-select">
+                <option value="Outpres">Outpres</option>
+                <option value="StaticPressure">Static Pressure</option>
+                <option value="Massflow">Massflow</option>
+              </select></td>
+          </tr>
+          <tr>
+            <th>Condition limite IN (outlet type)</th>
+  <td>
+    <div class="form-check">
+      <input name="condition_limite" id="condition_limite" class="form-check-input" type="checkbox">
+      <label for="condition_limite" class="form-check-label"></label>
+    </div>
+  </td>
+          </tr>
+          <tr>
+            <th>Condition limite OUT</th>
+            <td>
+              <select name="bc_out_type" class="form-select">
+                <option value="Outpres">Outpres</option>
+                <option value="StaticPressure">Static Pressure</option>
+                <option value="Massflow">Massflow</option>
+              </select>
+            </td>
+          </tr>
+                  <tr>
+            <th>(Outlet) Rafale du Cas</th>
+  <td>
+    <div class="form-check">
+      <input name="rafal_cas" id="rafal_cas" class="form-check-input" type="checkbox">
+      <label for="rafal_cas" class="form-check-label"></label>
+    </div>
+  </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+    <!-- =========================
+     PARAMÈTRES EXTRACTION
+========================== -->
+<div class="card mb-4">
+  <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Extraction</div>
+  <div class="card-body p-0">
+    <table class="table table-sm align-middle mb-0">
+      <tbody>
+        <tr>
+          <th style="width:260px;">Script Post-traitement</th>
+          <td>
+            <div class="input-group">
+              <input name="post_script" type="text" class="form-control" placeholder="C:\...\AnnNA_ScriptPostNS_V07.py">
+              <button type="button" class="btn btn-outline-secondary">Parcourir</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Activation génération visu embarquée</th>
+          <td>
+            <div class="form-check">
+              <input id="visu-enable" name="visu_enable" class="form-check-input" type="checkbox">
+              <label class="form-check-label" for="visu-enable">Activer</label>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Script visu embarquée</th>
+          <td>
+            <div class="input-group">
+              <input id="visu-script" name="visu_script" type="text" class="form-control" placeholder="C:\...\ParaViewAuto_Input.py" disabled>
+              <button id="visu-btn" type="button" class="btn btn-outline-secondary" disabled>Parcourir</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- =========================
+     PARAMÈTRES CO-PROCESSING
+========================== -->
+<div class="card mb-4">
+  <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Co-Processing</div>
+  <div class="card-body p-0">
+    <table class="table table-sm align-middle mb-0">
+      <tbody>
+
+        <tr>
+          <th style="width:260px;">Arrêt sur critère de Convergence</th>
+          <td>
+            <input name="conv_stop" type="checkbox" class="form-check-input">
+          </td>
+        </tr>
+
+        <tr>
+          <th>Label Grille</th>
+          <td><input name="grid_label" type="text" class="form-control"></td>
+        </tr>
+
+        <tr>
+          <th>Paramètre Cible</th>
+          <td>
+            <select name="target_param" class="form-select">
+              <option value="qcorr_ref">Qcorr_ref</option>
+              <option value="massflow">Massflow</option>
+              <option value="efficiency">Efficiency</option>
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Plan Perfos Amont</th>
+          <td>
+            <select name="perf_up" class="form-select">
+              <option value="Inlet">Inlet</option>
+              <option value="Outlet">Outlet</option>
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Plan Perfos Aval</th>
+          <td>
+            <select name="perf_down" class="form-select">
+              <option value="Outlet">Outlet</option>
+              <option value="Inlet">Inlet</option>
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Script de Co-Processing</th>
+          <td>
+            <div class="input-group">
+              <input name="copro_script" type="text" class="form-control" placeholder="C:\...\CoPro_Convergence.py">
+              <button type="button" class="btn btn-outline-secondary">Parcourir</button>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Activation CoPro</th>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <input id="copro-enable" name="copro_enable" type="checkbox" class="form-check-input">
+              <input id="copro-user" name="copro_user" type="text" class="form-control" placeholder="User Input (optionnel)" disabled>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- =========================
+     PARAMÈTRES CALCUL
+========================== -->
+<div class="card mb-4">
+  <div class="card-header fw-bold" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">Paramètres Calcul</div>
+  <div class="card-body p-0">
+    <table class="table table-sm align-middle mb-0">
+      <tbody>
+
+        <tr>
+          <th style="width:260px;">Nombre d’itérations</th>
+          <td><input name="iter_case" type="number" class="form-control" min="1" value="3000"></td>
+        </tr>
+
+        <tr>
+          <th>Plateforme</th>
+          <td>
+            <select name="platform" class="form-select">
+              <option value="XANTHE">XANTHE</option>
+              <option value="LOCAL">LOCAL</option>
+              <option value="SLURM">SLURM</option>
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Nombre de processeurs</th>
+          <td><input name="nprocs" type="number" class="form-control" min="1" value="28"></td>
+        </tr>
+
+        <tr>
+          <th>Elsa Version</th>
+          <td>
+            <select name="elsa_version" class="form-select">
+              <option value="v5.2.03">v5.2.03</option>
+              <option value="v5.2.02">v5.2.02</option>
+            </select>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Soumission du calcul</th>
+          <td>
+            <div class="form-check">
+              <input name="submit_calc" type="checkbox" class="form-check-input" checked>
+              <label class="form-check-label">Soumettre le calcul</label>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+    
+    
+  <!-- =========================
+       ACTIONS
+  ========================== -->
+  <div class="d-flex gap-2 justify-content-end mb-5">
+    <button type="reset" class="btn btn-outline-secondary">Réinitialiser</button>
+    <button type="submit" class="btn btn-primary">Générer le Script</button>
+  </div>
+</form>
+
+<!-- ===== Scripts minimes pour la table dynamique ===== -->
+<script>
+  (function () {
+    const tableBody = document.querySelector('#blades-table tbody');
+    const addBtn = document.getElementById('add-row');
+    const clearBtn = document.getElementById('clear-rows');
+
+    function makeCell(name, placeholder="") {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control form-control-sm';
+      input.name = name;
+      input.placeholder = placeholder;
+      td.appendChild(input);
+      return td;
+    }
+
+    function makeRow() {
+      const idx = tableBody.children.length + 1;
+      const tr = document.createElement('tr');
+      tr.appendChild(makeCell(`blades[${idx}][row_index]`, idx));
+      tr.appendChild(makeCell(`blades[${idx}][project]`));
+      tr.appendChild(makeCell(`blades[${idx}][version]`));
+      tr.appendChild(makeCell(`blades[${idx}][aube]`));
+      tr.appendChild(makeCell(`blades[${idx}][coupe]`));
+      tr.appendChild(makeCell(`blades[${idx}][blade_index]`));
+      tr.appendChild(makeCell(`blades[${idx}][xemp]`));
+      tr.appendChild(makeCell(`blades[${idx}][azimuth]`));
+      tr.appendChild(makeCell(`blades[${idx}][calage]`));
+
+      const tdDel = document.createElement('td');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-outline-danger';
+      btn.textContent = 'Suppr.';
+      btn.addEventListener('click', () => tr.remove());
+      tdDel.appendChild(btn);
+      tr.appendChild(tdDel);
+
+      return tr;
+    }
+
+    addBtn?.addEventListener('click', () => tableBody.appendChild(makeRow()));
+    clearBtn?.addEventListener('click', () => { tableBody.innerHTML = ''; });
+    // ligne initiale
+    tableBody.appendChild(makeRow());
+  })();
+</script>
+    
+{#Actif outlet/inlet#}
+<script>
+(function () {
+    const auto = document.getElementById('auto-plans');
+    const inlet   = document.getElementById('plan-inlet');
+    const outlet  = document.getElementById('plan-outlet');
+    const outlet2 = document.getElementById('plan-outlet-sec');
+
+    function updateState() {
+        const disabled = auto.checked;
+        inlet.disabled   = disabled;
+        outlet.disabled  = disabled;
+        outlet2.disabled = disabled;
+
+        if (disabled) {
+            inlet.value = "";
+            outlet.value = "";
+            outlet2.value = "";
+        }
+    }
+
+    auto.addEventListener('change', updateState);
+})();
+</script>
+
+    <!-- === JS minimaliste pour activer/désactiver les champs === -->
+<script>
+(function () {
+  // Visu embarquée
+  const visuEnable = document.getElementById('visu-enable');
+  const visuScript = document.getElementById('visu-script');
+  const visuBtn    = document.getElementById('visu-btn');
+
+  const toggleVisu = () => {
+    visuScript.disabled = !visuEnable.checked;
+    visuBtn.disabled    = !visuEnable.checked;
+    if (!visuEnable.checked) visuScript.value = "";
+  };
+
+  visuEnable.addEventListener('change', toggleVisu);
+  toggleVisu();
+
+  // Co-Processing
+  const coproEnable = document.getElementById('copro-enable');
+  const coproUser   = document.getElementById('copro-user');
+
+  const toggleCopro = () => {
+    coproUser.disabled = !coproEnable.checked;
+    if (!coproEnable.checked) coproUser.value = "";
+  };
+
+  coproEnable.addEventListener('change', toggleCopro);
+  toggleCopro();
+})();
+</script>
+
+{% endblock %}

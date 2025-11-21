@@ -1,0 +1,67 @@
+<!-- Modale Revue -->
+<div class="modal fade" id="modalRevueVeine" tabindex="-1" role="dialog" aria-hidden="true">
+   <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title">Associer à une Revue Veine</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+         </div>
+         <div class="modal-body">
+
+            <form id="form-new-revue" data-url="{% url 'create_new_revue_veine' %}">
+               {% csrf_token %}
+               <input type="hidden" name="etat_id" value="{{ etat_id }}">
+               <input type="hidden" name="cases_ids" id="selected-cases-hidden" value="">
+
+               <div class="mb-3">
+                  <label for="select_revue" class="form-label">Sélectionner une revue existante ou créer une nouvelle</label>
+                  <select class="form-select" name="revue_id" id="select_revue">
+                     <option value="">Créer une nouvelle revue</option>
+                     {% for revue in lst_revue_veine %}
+                         <option value="{{ revue.id }}">{{ revue }}</option>
+                     {% endfor %}
+                  </select>
+               </div>
+
+               <div class="mb-3" id="new-revue-name-block">
+                  <label for="id_name" class="form-label">Nom de la nouvelle revue</label>
+                  <input type="text" name="name" class="form-control" id="id_name">
+               </div>
+               <div id="error-revue" class="text-danger fw-bold"></div>
+            </form>
+
+         </div>
+         <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" form="form-new-revue" id="btn-new-revue">
+               Associer / Créer la revue
+            </button>
+         </div>
+      </div>
+   </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectRevue = document.getElementById('select_revue');
+    const newRevueBlock = document.getElementById('new-revue-name-block');
+    const newRevueInput = document.getElementById('id_name');
+
+    function toggleNewRevueField() {
+        if (selectRevue.value === "") {
+            newRevueBlock.style.display = "block";
+            newRevueInput.required = true;
+            newRevueInput.disabled = false;
+        } else {
+            newRevueBlock.style.display = "none";
+            newRevueInput.required = false;
+            newRevueInput.disabled = true;  // ← important !
+        }
+    }
+
+    if (selectRevue) {
+        selectRevue.addEventListener('change', toggleNewRevueField);
+        toggleNewRevueField();
+    }
+});
+
+</script>

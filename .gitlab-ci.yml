@@ -1,0 +1,20 @@
+include:
+  - project: 'devlab-public/gitlab-ci-templates'
+    ref: 'main'
+    file: '/python/gitlab-ci-python.yml'
+
+variables:
+  RUN_PYTEST_MINIMUM_COVERAGE: 0
+  ARTIFACT_ID: trunks
+  PYTHONPATH: "src"
+  GROUP_ID: safranae/aero
+  ARTIFACTORY_TOKEN: $ARTIFACTORY_TOKEN
+  GIT_PRIVATE_KEY: $GIT_PRIVATE_KEY
+  DJANGO_SETTINGS_MODULE: "config.settings.ci"
+  MAVEN_DELIVERY: "true"
+  run: pytest --ignore=**/migrations/ **/urls
+
+
+ruff:
+  allow_failure: true
+

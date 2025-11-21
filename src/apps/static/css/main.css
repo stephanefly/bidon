@@ -1,0 +1,30 @@
+
+body {
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+
+.container, .container-lg, .container-md, .container-sm, .container-xl {
+    max-width: 1400px;
+    background-color: #faf5ff;
+    padding: 40px;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+.nav-item {
+    font-weight: 500;
+    scale: 1.2;
+    padding-right: 25px;
+    padding-left: 25px;
+}
+
+.navbar-collapse {
+    align-items: center;
+}
+
+.navbar.navbar-custom {
+    background-color: #481449;
+}

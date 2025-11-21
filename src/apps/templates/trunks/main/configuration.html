@@ -1,0 +1,45 @@
+{% extends 'trunks/main/base.html' %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 class="fw-bold">Configuration <span class="text-primary">Logiciels</span></h2>
+    <p class="mt-3">Configurer vos propre parametre</p>
+</div>
+    
+<div style="max-width: 600px; margin: 40px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background-color: #fff;">
+    <form method="post">
+        {% csrf_token %}
+    
+{% for field in form %}
+    {% if field.name != "ensight_path" %}
+        <div style="margin-bottom: 30px;">
+            <label for="{{ field.id_for_label }}" style="display: block; margin-bottom: 10px; font-weight: bold; font-size: 16px;">
+                {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+                <div style="color: red; font-size: 14px;">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}
+
+
+
+        <button type="submit" style="
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        " onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'">
+            Enregistrer
+        </button>
+    </form>
+</div>
+{% endblock %}

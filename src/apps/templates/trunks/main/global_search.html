@@ -1,0 +1,45 @@
+{% extends 'trunks/main/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Résultats pour : "{{ query }}"</h2>
+
+    {% if results.projects or results.etats or results.cas %}
+        {% if results.projects %}
+            <h4 class="mt-4">Projets</h4>
+            <ul>
+                {% for p in results.projects %}
+                    <li><a href="{% url 'lst_projets' %}/{{ p.id }}">{{ p.name }}</a> (créé par {{ p.created_by }})</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if results.etats %}
+            <h4 class="mt-4">États</h4>
+            <ul>
+                {% for e in results.etats %}
+                    <li><a href="{% url 'info_etat' e.id %}">{{ e.name }}</a> (projet : {{ e.projet.name }})</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if results.cas %}
+            <h4 class="mt-4">Cas</h4>
+            <ul>
+                {% for c in results.cas %}
+                    <li>{{ c.name }} (Iso : {{ c.iso_vitesse.name }})(Etat : <a href="{% url 'info_etat' c.iso_vitesse.etat.id %}">{{ c.iso_vitesse.etat.name }}</a>)</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% if results.iso_vitesse %}
+            <h4 class="mt-4">IsoVitesse</h4>
+            <ul>
+                {% for i in results.iso_vitesse %}
+                    <li>{{ i.name }} (Etat : <a href="{% url 'info_etat' i.etat.id %}">{{ i.etat.name }}</a>)</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% else %}
+        <p>Aucun résultat trouvé.</p>
+    {% endif %}
+</div>
+{% endblock %}

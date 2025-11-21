@@ -1,0 +1,242 @@
+<button
+   id="iso-vitesse-btn-{{ iso_vitesse.id }}"
+   class="btn btn-primary lg iso-vitesse-btn text-light"
+   data-bs-toggle="collapse"
+   data-bs-target="#isovitesse{{ iso_vitesse.id }}"
+   data-iso-id="{{ iso_vitesse.id }}"
+   style="background-color: {{ iso_vitesse.color }}; border-color: {{ iso_vitesse.color }};">
+<b id="iso-vitesse-name-{{ iso_vitesse.id }}">{{ iso_vitesse.name }}</b>
+<span class="mx-2 text-muted">|</span>
+<span id="iso-vitesse-type-{{ iso_vitesse.id }}" class="badge text-light">
+{{ iso_vitesse.get_file_type_display }}
+</span>
+<span class="mx-2 text-muted">|</span>
+<span id="iso-vitesse-symbol-{{ iso_vitesse.id }}" class="badge text-light">
+{{ iso_vitesse.get_marker_display }}
+</span>
+<span class="mx-2 text-muted">|</span>
+<span class="badge iso-vitesse-stats {% if iso_vitesse.used_cas == 0 %}bg-danger{% else %}bg-success{% endif %}" data-id="{{ iso_vitesse.id }}">
+{{ iso_vitesse.used_cas }}/{{ iso_vitesse.total_cas }}
+</span>
+</button>
+<div id="isovitesse{{ iso_vitesse.id }}" class="collapse">
+   <div class="btn-group-flex">
+      <!-- Bouton modale nom -->
+      <button type="button" class="action-btn btn btn-primary text-light"
+         data-bs-toggle="modal"
+         data-bs-target="#modifyIsovitessNameModal{{ iso_vitesse.id }}"
+         data-iso-id="{{ iso_vitesse.id }}"
+         style="background-color: {{ iso_vitesse.color }};">
+      Changer le Nom
+      </button>
+      <!-- Sélecteur recalage kd -->
+      <div class="recalage-group" style="background-color: {{ iso_vitesse.color }};" data-iso-id="{{ iso_vitesse.id }}">
+         <label class="recalage-label" for="toggle-kd-{{ iso_vitesse.id }}">
+         Recalage KD
+         </label>
+        <input type="checkbox"
+           class="toggle-kd"
+           data-id="{{ iso_vitesse.id }}"
+           data-input="#RecalageKD_value_{{ iso_vitesse.id }}"
+           {% if iso_vitesse.recalage_kd is not None %}checked{% endif %}
+        >
+
+        <input type="number"
+           step="0.01"
+           min="0"
+           max="1"
+           class="recalage-kd-value"
+           id="RecalageKD_value_{{ iso_vitesse.id }}"
+           data-id="{{ iso_vitesse.id }}"
+           data-url="{% url 'update_recalage_kd' iso_vitesse.id %}"
+           value="{% if iso_vitesse.recalage_kd is not None %}{{ iso_vitesse.recalage_kd|stringformat:"g" }}{% endif %}"
+           required
+        >
+         <span class="kd-feedback" data-id="{{ iso_vitesse.id }}"></span>
+      </div>
+      <!-- Sélecteur couleur -->
+      <select
+         class="action-btn select-couleur-mini"
+         data-iso-id="{{ iso_vitesse.id }}"
+         style="background-color: {{ iso_vitesse.color }};"
+         onchange="updateIsovitesseColor({{ iso_vitesse.id }}, this.value)">
+      {% for color_code, color_label in color_options.items %}
+      <option
+      value="{{ color_code }}"
+      style="background-color: {{ color_code }}; font-weight: bold;"
+      {% if iso_vitesse.color == color_code %}selected{% endif %}>
+      {{ color_label.fr }}
+      </option>
+      {% endfor %}
+      </select>
+      <!-- Sélecteur symbole -->
+      <select
+         class="action-btn select-symbole-mini"
+         data-iso-id="{{ iso_vitesse.id }}"
+         style="background-color: {{ iso_vitesse.color }};"
+         onchange="updateIsovitesseSymbol({{ iso_vitesse.id }}, this.value)">
+      {% for symbol_code, symbol_label in symbol_options.items %}
+      <option
+      value="{{ symbol_code }}"
+      {% if iso_vitesse.marker == symbol_code %}selected{% endif %}>
+      {{ symbol_label.fr }}
+      </option>
+      {% endfor %}
+      </select>
+      <form method="post" class="active-all-form" data-id="{{ iso_vitesse.id }}" data-url="{% url 'active_all_item' 'iso_vitesse' iso_vitesse.id %}" style="margin:0;">
+         {% csrf_token %}
+         <button type="button" class="action-btn btn btn-primary active-all-btn text-light"
+            data-iso-id="{{ iso_vitesse.id }}"
+            style="background-color: {{ iso_vitesse.color }};">
+         Activer
+         </button>
+      </form>
+      <form method="post" class="desactive-all-form" data-id="{{ iso_vitesse.id }}" data-url="{% url 'desactive_all_item' 'iso_vitesse' iso_vitesse.id %}" style="margin:0;">
+         {% csrf_token %}
+         <button type="button" class="action-btn btn btn-primary desactive-all-btn text-light"
+            data-iso-id="{{ iso_vitesse.id }}"
+            style="background-color: {{ iso_vitesse.color }};">
+         Désactiver
+         </button>
+      </form>
+      <form method="post"
+         action="{% url 'delete_iso_vitesse' 'iso_vitesse' iso_vitesse.id %}" style="margin:0;">
+         {% csrf_token %}
+         <button type="submit" class="action-btn btn btn-primary bi-trash-fill text-light"
+            data-iso-id="{{ iso_vitesse.id }}"
+            style="background-color: {{ iso_vitesse.color }};"
+            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette liste de cas ?');">
+         </button>
+      </form>
+   </div>
+   <!-- Modal Changer le Nom -->
+   <div class="modal fade" id="modifyIsovitessNameModal{{ iso_vitesse.id }}"
+      aria-labelledby="modifyIsovitessNameModalLabel{{ iso_vitesse.id }}"
+      aria-hidden="true">
+      <div class="modal-dialog">
+         <div class="modal-content">
+            <form id="form-name-{{ iso_vitesse.id }}" onsubmit="event.preventDefault(); submitNameChange({{ iso_vitesse.id }});">
+               {% csrf_token %}
+               <div class="modal-header">
+                  <a class="modal-title text-light" id="modifyIsovitessNameModalLabel{{ iso_vitesse.id }}">
+                  Changer le Nom
+                  </a>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+               </div>
+               <div class="modal-body">
+                  <input type="text"
+                     class="form-control"
+                     id="name-input-{{ iso_vitesse.id }}"
+                     name="new_name_isovitesse_input"
+                     value="{{ iso_vitesse.name }}"
+                     onkeydown="if(event.key === 'Enter'){ event.preventDefault(); submitNameChange({{ iso_vitesse.id }}); }" />
+               </div>
+               <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                  <button type="button" class="btn btn-primary" onclick="submitNameChange({{ iso_vitesse.id }})">Changer</button>
+               </div>
+            </form>
+         </div>
+      </div>
+   </div>
+   <!-- Tableau des cas -->
+   <table id="tablecas" class="table table-bordered table-striped text-center w-100" style="table-layout: fixed; height: auto">
+      <thead>
+         <tr>
+            <th style="width: 75%; border: None">Nom du cas</th>
+            <th style="width: 5%; border: None">Actif</th>
+            <th style="width: 15%; border: None">Actions</th>
+         </tr>
+      </thead>
+      <tbody>
+         {% for cas in lst_cas %}         {% if cas.iso_vitesse.id == iso_vitesse.id %}
+         <tr data-iso-id="{{ iso_vitesse.id }}" style="background-color: {{ iso_vitesse.color }}; text-align: center; word-break: break-all; height: auto;">
+            <td style="color: white">{{ cas.file_path }}</td>
+            <td class="cas-status" data-id="{{ cas.id }}">
+               {% if cas.used %}
+               <i class="bi bi-check-circle-fill text-success"
+                  style="text-align: center; vertical-align: middle; font-size: x-large;"></i>
+               {% else %}
+               <i class="bi bi-x-square-fill text-danger" style="text-align: center; vertical-align: middle; font-size: x-large;"></i>
+               {% endif %}
+            </td>
+<td>
+  <div class="d-flex align-items-center gap-2">
+    <button type="button" class="btn btn-primary toggle-used"
+      data-id="{{ cas.id }}"
+      data-url="{% url 'active_item' 'cas' cas.id %}"
+      data-iso-id="{{ iso_vitesse.id }}"
+      title="{% if cas.used %}Désactiver{% else %}Activer{% endif %}">
+      {% if cas.used %}
+        <i class="bi bi-eye-slash" style="font-size: medium;"></i>
+      {% else %}
+        <i class="bi bi-eye" style="font-size: medium;"></i>
+      {% endif %}
+    </button>
+<button type="button"
+        class="btn btn-primary"
+        onclick="copyToClipboard('{{ cas.repertory|escapejs }}')"
+        title="Ouvrir le dossier du cas"
+        data-bs-toggle="tooltip" data-bs-placement="top">
+    <i class="bi bi-folder"></i>
+</button>
+
+
+    <form method="post" action="{% url 'delete_item' 'cas' cas.id %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger"
+        data-iso-id="{{ iso_vitesse.id }}"
+        style="font-size: medium;"
+        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce cas ?');">
+        <i class="bi bi-trash-fill"></i>
+      </button>
+    </form>
+  </div>
+</td>
+
+         </tr>
+         {% endif %}
+         {% endfor %}
+      </tbody>
+   </table>
+</div>
+
+
+<script>
+function copyToClipboard(text) {
+    // Copie dans le presse-papier
+    navigator.clipboard.writeText(text).then(function() {
+        showCopyNotification("Copié dans le presse-papier : " + text);
+    }, function() {
+        showCopyNotification("Erreur lors de la copie !");
+    });
+}
+
+// Affiche la notification UX moderne
+function showCopyNotification(message) {
+    // Vérifie si la notif existe déjà
+    let notif = document.getElementById("clipboard-toast");
+    if (!notif) {
+        notif = document.createElement("div");
+        notif.id = "clipboard-toast";
+        notif.style.position = "fixed";
+        notif.style.top = '20px';
+        notif.style.right = "20px";
+        notif.style.background = "#471448";
+        notif.style.color = "#fff";
+        notif.style.padding = "16px 18px";
+        notif.style.borderRadius = "12px";
+        notif.style.boxShadow = "0 4px 14px rgba(0,0,0,0.10)";
+        notif.style.zIndex = 9999;
+        notif.style.fontWeight = "bold";
+        notif.style.fontSize = "1rem";
+        document.body.appendChild(notif);
+    }
+    notif.textContent = message;
+    notif.style.display = "block";
+    // Disparition auto après 2,5 secondes
+    setTimeout(function() {
+        notif.style.display = "none";
+    }, 2500);
+}
+</script>

@@ -1,0 +1,681 @@
+{% extends 'trunks/main/base.html' %}
+{% load static %}
+{% block content %}
+<h2 class="text-center">Revue Aube : {{ revue_aube.name }}</h2>
+<br>
+<div class="card" style="background: linear-gradient(135deg, #481449 0%, #8f4890 100%); border: solid black 2px">
+   <div class="card-header" style="background: linear-gradient(135deg, #481449 0%, #8f4890 100%); color: white;">
+      📂 Dictionnaire Genepi
+   </div>
+   <div class="card-body" style="background-color: #e9ecef;">
+            <span class="badge bg-light text-wrap" style="font-size:1.2rem; font-family: monospace; color: black">
+        {{ dico_genepi_auto }}
+      </span>
+      </br><br>
+<a href="{% url 'afficher_code_dico' revue_aube.pk %}" class="btn btn-light">
+    Visualiser
+</a>
+    <a href="{% url 'telecharger_code_dico' revue_aube.pk %}" class="btn btn-light">
+        Télécharger
+    </a>
+
+<a href="#" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#changeFileModal">
+    Changer
+</a>  
+{#MODAL CHANGER DICO#}
+<div class="modal fade" id="changeFileModal" tabindex="-1" aria-labelledby="changeFileModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" enctype="multipart/form-data" action="{% url 'changer_dico' revue_aube.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="changeFileModalLabel">Changer le dictionnaire Python</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <label for="new_file" class="form-label">Sélectionnez un nouveau fichier (.py)</label>
+          <input type="file" name="new_file" id="new_file" class="form-control" accept=".py" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-success">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+ </div>
+</div>
+<br>
+<!-- gestion des aubes -->
+<div class="card" style="background: linear-gradient(135deg, #481449 0%, #8f4890 100%); border: solid black 2px">
+   <div class="card-header" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">
+      Gestion des Aubes
+   </div>
+   <div class="card-body" style="background-color: #e9ecef;">
+      <!-- Tableau Aubes -->
+      <div class="table-responsive">
+         <table id="tablecas"
+            class="table table-bordered table-striped text-center w-100"
+            style="table-layout: fixed; height: auto">
+            <thead class="table-light">
+               <tr>
+                  <th>Titre</th>
+                  <th>Projet</th>
+                  <th>Version</th>
+                  <th>Aube</th>
+                <th>Actif</th>
+                  <th>Couleur</th>
+                  <th style="width:180px;">Actions</th>
+               </tr>
+            </thead>
+            <tbody>
+               {% for aube in lst_aube %}
+        <tr data-iso-id="{{ aube.id }}"
+            class="align-middle text-center"
+            style="background-color: {{ aube.color }}; color: white; word-break: break-all;">
+                  {% if aube.titre_cas %}
+                  <td style="color: white;" >{{ aube.titre_cas }}</td>
+                  {% else %}
+                  <td style="color: white;" >{{ aube.projet }}/{{ aube.version }}/{{ aube.aube }}</td>
+                  {% endif %}
+                  <!-- Champs principaux -->
+                  <td class="text-truncate" style="max-width:180px;color: white;">{{ aube.projet }}</td>
+                  <td class="text-truncate" style="max-width:160px;color: white;">{{ aube.version }}</td>
+                  <td class="text-truncate" style="max-width:160px;color: white;">{{ aube.aube }}</td>
+                  <td class="aube-status" data-id="{{ aube.id }}">
+                     {% if aube.used %}
+                     <i class="bi bi-check-circle-fill text-success"
+                        style="text-align: center; vertical-align: middle; font-size: x-large;"></i>
+                     {% else %}
+                     <i class="bi bi-x-square-fill text-danger"
+                        style="text-align: center; vertical-align: middle; font-size: x-large;"></i>
+                     {% endif %}
+                  </td>
+            <!-- Couleur -->
+            <td>
+                <select class="form-select text-center select-couleur-mini mx-auto"
+                        data-iso-id="{{ aube.id }}"
+                        style="background-color: {{ aube.color }}; color: white"
+                        onchange="updateIsovitesseColor({{ aube.id }}, this.value)">
+                    {% for color_code, color_label in color_options.items %}
+                        <option value="{{ color_code }}"
+                                style="background-color: {{ color_code }}; font-weight: bold;"
+                                {% if aube.color == color_code %}selected{% endif %}>
+                            {{ color_label.fr }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+                  <!-- Actions -->
+            <td>
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-1">
+                    <!-- Modifier -->
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            title="Modifier"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalEditAube{{ aube.id }}">
+                        <i class="bi bi-pencil-fill icon-action"></i>
+                    </button>
+
+                    <!-- Activer / Désactiver -->
+                    <button type="button"
+                            class="btn btn-primary btn-sm toggle-used"
+                            data-id="{{ aube.id }}"
+                            data-url="{% url 'active_aube' revue_aube.id aube.id %}"
+
+                            title="{% if aube.used %}Désactiver{% else %}Activer{% endif %}">
+                        {% if aube.used %}
+                        <i class="bi bi-eye-slash icon-action"></i>
+                        {% else %}
+                        <i class="bi bi-eye icon-action"></i>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dupliquer -->
+                    <form method="post" action="{% url 'aube_duplicate' revue_aube.id aube.id %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-primary btn-sm"
+                                title="Dupliquer"
+                                onclick="return confirm('Dupliquer cette aube ?');">
+                            <i class="bi bi-files icon-action"></i>
+                        </button>
+                    </form>
+
+                    <!-- Supprimer -->
+                    <form method="post" action="{% url 'aube_delete' revue_aube.id aube.id %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-danger btn-sm"
+                                title="Supprimer"
+                                onclick="return confirm('Supprimer cette aube ?');">
+                            <i class="bi bi-trash-fill icon-action"></i>
+                        </button>
+                    </form>
+                </div>
+            </td>
+
+               </tr>
+<!-- Modal ÉDITION -->
+<style>
+.modal-ordered .modal-header {
+  background: linear-gradient(135deg, #481449 0%, #8f4890 100%);
+  color: #fff;
+  border: 0;
+  padding: .6rem .9rem;
+}
+
+/* Grille ordonnée */
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px 1fr; /* label/champ x2 */
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: center;
+}
+.form-grid-2col .full-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: center;
+  column-gap: 16px;
+}
+
+/* Labels & inputs */
+.form-grid-2col label {
+  font-weight: 600;
+  font-size: .92rem;
+  color: #3e0f4f;
+  margin: 0;
+  white-space: nowrap;
+}
+.form-grid-2col .form-control,
+.form-grid-2col .form-select {
+  height: 2.35rem;
+  border-radius: .5rem;
+  border: 1px solid #ddd;
+  font-size: .95rem;
+  padding: .35rem .55rem;
+}
+.form-grid-2col .form-control:focus,
+.form-grid-2col .form-select:focus {
+  border-color: #8a3da2;
+  box-shadow: 0 0 0 .15rem rgba(138,61,162,.15);
+}
+
+/* Switchs */
+.switch-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: .5rem;
+}
+.switch-row .form-check {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0;
+}
+</style>
+
+<div class="modal fade modal-ordered" id="modalEditAube{{ aube.id }}" tabindex="-1"
+     aria-labelledby="modalEditLabel{{ aube.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'aube_update' revue_aube.id aube.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Header -->
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-pencil-square fs-5"></i>
+            <h6 class="modal-title m-0" id="modalEditLabel{{ aube.id }}">Modifier Aube #{{ aube.id }}</h6>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+          <div class="form-grid-2col">
+
+            <!-- Ligne 1 -->
+            <label for="{{ aube.edit_form.projet.id_for_label }}">Projet</label>
+            {{ aube.edit_form.projet }}
+            <label for="{{ aube.edit_form.version.id_for_label }}">Version</label>
+            {{ aube.edit_form.version }}
+
+            <!-- Ligne 2 -->
+            <label for="{{ aube.edit_form.aube.id_for_label }}">Aube</label>
+            {{ aube.edit_form.aube }}
+            <label for="{{ aube.edit_form.titre_cas.id_for_label }}">Titre Cas (opt.)</label>
+            {{ aube.edit_form.titre_cas }}
+
+            <!-- Ligne 3 -->
+            <label for="{{ aube.edit_form.type_coupe_nbre_ldc.id_for_label }}">Type Coupe</label>
+            {{ aube.edit_form.type_coupe_nbre_ldc }}
+            <label for="{{ aube.edit_form.coupe_dessin.id_for_label }}">Coupe de dessin</label>
+            {{ aube.edit_form.coupe_dessin }}
+
+            <!-- Ligne 4 -->
+            <label for="{{ aube.edit_form.calage_deg.id_for_label }}">Calage (deg)</label>
+            {{ aube.edit_form.calage_deg }}
+            <label for="{{ aube.edit_form.label_bsam.id_for_label }}">Label BSAM</label>
+            {{ aube.edit_form.label_bsam }}
+
+            <!-- Lignes pleine largeur -->
+            <div class="full-row">
+              <label for="{{ aube.edit_form.lien_xml.id_for_label }}">Lien XML</label>
+              {{ aube.edit_form.lien_xml }}
+            </div>
+            <div class="full-row">
+              <label for="{{ aube.edit_form.fichier_bsam.id_for_label }}">Fichier BSAM</label>
+              {{ aube.edit_form.fichier_bsam }}
+            </div>
+
+            <!-- Switchs -->
+            <div class="switch-row">
+              <div class="form-check form-switch">
+                {{ aube.edit_form.inversion_aube }}
+                <label class="form-check-label" for="{{ aube.edit_form.inversion_aube.id_for_label }}">Inversion Aube</label>
+              </div>
+              <div class="form-check form-switch">
+                {{ aube.edit_form.inversion_bsam }}
+                <label class="form-check-label" for="{{ aube.edit_form.inversion_bsam.id_for_label }}">Inversion BSAM</label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Annuler
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save me-1"></i> Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+               {% empty %}
+               <tr>
+                  <td colspan="6" class="text-muted">Aucune aube pour l’instant.</td>
+               </tr>
+               {% endfor %}
+            </tbody>
+         </table>
+      </div>
+      <button type="button" class="btn btn-info btn rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalAube">
+      <i class="bi bi-plus-circle me-1"></i> Ajouter une Aube
+      </button>
+   </div>
+</div>
+<br>
+<!-- Boutton -->
+<div class="row">
+  <div class="col text-center">
+    <form method="POST" action="{% url 'launch_revue_aube' revue_aube.id %}" id="revueAubeForm">
+      {% csrf_token %}
+      <button type="submit" id="revueAubeBtn" class="btn btn-success btn-lg ms-3" style="border-color:#031633;">
+        <i class="bi bi-play-circle me-1"></i> Générer Script
+      </button>
+    </form>
+  </div>
+  <div class="col text-center">
+
+                 <!-- Copier Repertoire de travail -->
+<button onclick="copyToClipboard('{{ revue_aube.work_dir|escapejs }}')" 
+        class="btn btn-primary"
+        style="border-width: 2px; padding: 8px 14px; font-weight: 500;">
+    
+    <i class="bi bi-folder"></i> 
+    <span>Dossier de travail</span>
+
+</button>
+  </div>
+</div>
+
+
+<style>
+.table-white-border td,
+.table-white-border th,
+.table-white-border {
+    border: 1px solid #fff !important;
+}
+</style>
+
+<!-- Modal AJOUT -->
+<style>
+.modal-ordered .modal-header {
+  background: linear-gradient(135deg, #481449 0%, #8f4890 100%);
+  color: #fff;
+  border: 0;
+  padding: .6rem .9rem;
+}
+
+/* Grille ordonnée */
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px 1fr;  /* label / champ x2 */
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: center;
+}
+.form-grid-2col .full-row { 
+  grid-column: 1 / -1; 
+  display: grid; 
+  grid-template-columns: 180px 1fr; 
+  align-items: center;
+  column-gap: 16px;
+}
+
+/* Labels et champs */
+.form-grid-2col label {
+  font-weight: 600;
+  font-size: .92rem;
+  color: #3e0f4f;
+  margin: 0;
+  white-space: nowrap;
+}
+.form-grid-2col .form-control,
+.form-grid-2col .form-select {
+  height: 2.35rem;
+  border-radius: .5rem;
+  border: 1px solid #ddd;
+  font-size: .95rem;
+  padding: .35rem .55rem;
+}
+.form-grid-2col .form-control:focus,
+.form-grid-2col .form-select:focus {
+  border-color: #8a3da2;
+  box-shadow: 0 0 0 .15rem rgba(138,61,162,.15);
+}
+
+/* Switchs */
+.switch-row { 
+  grid-column: 1 / -1; 
+  display: flex; 
+  justify-content: center; 
+  gap: 2.5rem; 
+  margin-top: .5rem; 
+}
+.switch-row .form-check { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: .4rem; 
+  margin: 0; 
+}
+</style>
+
+<div class="modal fade modal-ordered" id="modalAube" tabindex="-1" aria-labelledby="modalAubeLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'aube_create' revue_aube.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Header -->
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle fs-5"></i>
+            <h6 class="modal-title m-0" id="modalAubeLabel">Nouvelle Aube</h6>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+          <div class="form-grid-2col">
+            <!-- Ligne 1 -->
+            <label for="{{ form.projet.id_for_label }}">Projet</label>
+            {{ form.projet }}
+            <label for="{{ form.version.id_for_label }}">Version</label>
+            {{ form.version }}
+
+            <!-- Ligne 2 -->
+            <label for="{{ form.aube.id_for_label }}">Aube</label>
+            {{ form.aube }}
+            <label for="{{ form.titre_cas.id_for_label }}">Titre Cas (opt.)</label>
+            {{ form.titre_cas }}
+
+            <!-- Ligne 3 -->
+            <label for="{{ form.type_coupe_nbre_ldc.id_for_label }}">Type Coupe</label>
+            {{ form.type_coupe_nbre_ldc }}
+            <label for="{{ form.coupe_dessin.id_for_label }}">Coupe de dessin</label>
+            {{ form.coupe_dessin }}
+
+            <!-- Ligne 4 -->
+            <label for="{{ form.calage_deg.id_for_label }}">Calage (deg)</label>
+            {{ form.calage_deg }}
+            <label for="{{ form.label_bsam.id_for_label }}">Label BSAM</label>
+            {{ form.label_bsam }}
+
+            <!-- Lignes 5 et 6 : pleine largeur -->
+            <div class="full-row">
+              <label for="{{ form.lien_xml.id_for_label }}">Lien XML</label>
+              {{ form.lien_xml }}
+            </div>
+            <div class="full-row">
+              <label for="{{ form.fichier_bsam.id_for_label }}">Fichier BSAM</label>
+              {{ form.fichier_bsam }}
+            </div>
+
+            <!-- Switchs -->
+            <div class="switch-row">
+              <div class="form-check form-switch">
+                {{ form.inversion_aube }}
+                <label class="form-check-label" for="{{ form.inversion_aube.id_for_label }}">Inversion Aube</label>
+              </div>
+              <div class="form-check form-switch">
+                {{ form.inversion_bsam }}
+                <label class="form-check-label" for="{{ form.inversion_bsam.id_for_label }}">Inversion BSAM</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Annuler
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+   function copyToClipboard(text) {
+       // Copie dans le presse-papier
+       navigator.clipboard.writeText(text).then(function() {
+           afficherNotif2("Copié dans le presse-papier : " + text);
+       }, function() {
+           afficherNotif2("Erreur lors de la copie !");
+       });
+   }
+
+   function afficherNotif2(message) {
+       let notif = document.getElementById('custom-notif');
+       if (!notif) {
+           notif = document.createElement('div');
+           notif.id = 'custom-notif';
+           notif.style.position = 'fixed';
+           notif.style.top = '20px';
+           notif.style.right = '20px';
+           notif.style.minWidth = '250px';
+           notif.style.zIndex = 99999;
+           notif.style.padding = '16px 18px';
+           notif.style.borderRadius = '12px';
+           notif.style.fontSize = '1rem';
+           notif.style.color = '#fff';
+           notif.style.fontWeight = "bold";
+           notif.style.background = "#471448";
+           notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
+           document.body.appendChild(notif);
+       }
+       notif.innerHTML = message;
+       notif.style.display = 'block';
+
+       // Disparition auto après 2,5 secondes
+       setTimeout(function() {
+           notif.style.display = "none";
+       }, 2500);
+   }
+</script>
+<!-- Activer/Désactiver une aube -->
+<script>
+   function getCookie(name) {
+     let cookieValue = null;
+     if (document.cookie && document.cookie !== '') {
+       const cookies = document.cookie.split(';');
+       for (let i = 0; i < cookies.length; i++) {
+         const cookie = cookies[i].trim();
+         if (cookie.substring(0, name.length + 1) === (name + '=')) {
+           cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+           break;
+         }
+       }
+     }
+     return cookieValue;
+   }
+   const csrftoken = getCookie('csrftoken');
+
+   $(document).ready(function () {
+     $('.toggle-used').click(function () {
+       const button  = $(this);
+       const aubeId   = button.data('id');
+       const url     = button.data('url');
+
+
+           $.ajax({
+             url: url,
+             type: 'POST',
+             headers: { 'X-CSRFToken': csrftoken },
+             success: function (data) {
+               if (!data.success) return;
+
+               // Met à jour l’icône du bouton
+               const icon = button.find('i');
+               if (data.used) {
+                 icon.removeClass('bi-eye').addClass('bi-eye-slash');
+                 button.attr('title', 'Désactiver');
+               } else {
+                 icon.removeClass('bi-eye-slash').addClass('bi-eye');
+                 button.attr('title', 'Activer');
+               }
+
+               // Met à jour l’icône dans la cellule
+               const statusCellIcon = $(`.aube-status[data-id="${aubeId}"] i`);
+               if (data.used) {
+                 statusCellIcon
+                   .removeClass('bi-x-square-fill text-danger')
+                   .addClass('bi-check-circle-fill text-success');
+               } else {
+                 statusCellIcon
+                   .removeClass('bi-check-circle-fill text-success')
+                   .addClass('bi-x-square-fill text-danger');
+               }
+             }
+           });
+
+     });
+   });
+</script>
+
+<!-- button couleur -->
+<script>
+    // Changer la couleur (MAJ fond collapse ET groupe de boutons)
+    function updateIsovitesseColor(isoId, color) {
+        fetch("{% url 'update_color_item' 'aube' 0 %}".replace('0', isoId), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: "color_aube=" + encodeURIComponent(color)
+        })
+            .then(response => {
+                if (response.ok) {
+                    // MAJ tous les boutons/badges portant le data-iso-id concerné
+                    document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
+                        // On évite de toucher au collapse principal qui reste transparent
+                        if (el.id !== 'aube' + isoId) {
+                            el.style.backgroundColor = color;
+                            el.style.transition = "background 0.1s, border-color 0.1s";
+                        }
+                    });
+
+                } else {
+                    alert("Erreur lors de la mise à jour !");
+                }
+            })
+            .catch(() => alert("Erreur réseau."));
+    }
+</script>
+
+
+{#boutton generation#}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('revueAubeForm');
+  const btn  = document.getElementById('revueAubeBtn');
+  const originalText = btn.innerHTML;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Empêche le rechargement
+
+    // Spinner
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Génération...';
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: new FormData(form)
+      });
+
+      if (!response.ok) throw new Error('Erreur serveur');
+
+      // 🔹 Si la réponse est un fichier (ex. HTML généré ou ZIP)
+      const dispo = response.headers.get('Content-Disposition') || '';
+      const type  = response.headers.get('Content-Type') || 'text/plain';
+      const blob  = await response.blob();
+
+      let filename = 'script_genere.py';
+      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i);
+      if (match) filename = decodeURIComponent(match[1] || match[2]);
+
+
+
+      // 🔹 Notification de succès
+      const toast = document.createElement('div');
+      toast.className = 'alert alert-success mt-3';
+      toast.textContent = '✅ Script généré avec succès.';
+      form.parentNode.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur lors de la génération du script.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  });
+});
+</script>
+
+{% endblock %}

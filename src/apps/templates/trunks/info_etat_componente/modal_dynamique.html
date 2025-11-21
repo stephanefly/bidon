@@ -1,0 +1,54 @@
+<!--MODALE DYNAMIQUE -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <!-- En-tête dynamique -->
+         <div class="modal-header" id="modal-header">
+            <h5 class="modal-title" id="modal-title">...</h5>
+         </div>
+         <!-- Corps dynamique -->
+         <div class="modal-body" id="modal-body">
+            ...
+         </div>
+         <!-- Pied dynamique -->
+         <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            <button class="btn btn-primary" id="confirm-button" onclick="submitForm()">Confirmer</button>
+         </div>
+      </div>
+   </div>
+</div>
+
+<!--SCRIPT JS -->
+<script>
+   function openConfirmationModal() {
+       const count = parseInt(document.getElementById('used-count').textContent);
+       const modalHeader = document.getElementById('modal-header');
+       const modalTitle = document.getElementById('modal-title');
+       const modalBody = document.getElementById('modal-body');
+       const confirmButton = document.getElementById('confirm-button');
+       const btnloader = document.getElementById('btn-loader');
+
+
+       if (count < 1) {
+           // Cas interdit
+           modalHeader.classList.add("bg-danger", "text-white");
+           modalTitle.textContent = "Action impossible";
+           modalBody.textContent = "Au moins un cas doit être activé pour tracer les Perfos 0D.";
+           confirmButton.style.display = "none";
+
+           const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+           modal.show();
+
+       } else {
+           // Cas autorisé
+           submitForm();
+           btnloader.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Chargement...';
+       }
+
+   }
+
+   function submitForm() {
+       document.getElementById('realSubmitForm').submit();
+   }
+</script>

@@ -1,0 +1,124 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "trunks"
+description = "Plateforme de conception aérodynamique"
+dynamic = ["version"]
+dependencies = [
+    # All Django packages
+    "Django==4.2.*",
+    "PyYAML",
+    "django-bootstrap-v5",
+    "ldap3",
+    "pandas",
+    "pillow",
+    "openpyxl",
+    "safranae-bsamreader",
+    "reportlab",
+    "bokeh",
+    "psycopg2-binary",
+    "matplotlib",
+    "h5py",
+    "safranae-django-login[ldap]",
+    "django-silk",
+    "pypdf",
+    "xlrd",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    # "django-debug-toolbar",
+    # "django-test-migrations",
+    # Linting & Formating
+    "ruff",
+    # Testing
+    "pytest",
+    "pytest-cov",
+    "pytest-django",
+    "pytest-mock",
+]
+prod = [
+    # Uncomment the good dependancy
+    # For running on Windows Server (IIS)
+    # "wfastcgi",
+    # For running on Linux Server
+    "gunicorn"
+]
+
+
+[tool.hatch.version]
+path = "src/config/__version__.py"
+[tool.hatch.build]
+sources = ["src"]
+exclude = [
+    "/tests",
+]
+include = [
+    "config",
+    "apps",
+    "env.yml.example",
+    "manage.py",
+    "pyproject.toml",
+    "README.md",
+    "CONTRIBUTING.md",
+    "requirements-prod.txt",
+]
+[tool.hatch.build.targets]
+packages = ["apps", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.local"
+addopts = "--reuse-db"
+
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    "W",
+    # Pyflakes
+    "F",
+    # pylint
+    "PL",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # flake8-print
+    "T",
+    # flake8-django
+    "DJ",
+    # flake8-bandit
+    "S",
+    # flake8-naming
+    "N",
+    # isort
+    "I",
+]
+
+[tool.pip-tools]
+no_emit_options = true
+
+
+[tool.coverage.run]
+omit = [
+    "src/**/migrations/*",
+    "src/**/urls/*",
+    "src/config/*",
+    "src/apps/main/modules/graph_perfo_0d/js_bokeh.py",
+]
+
+[tool.ruff]
+exclude = [".venv",
+    "src/apps/main/migrations/*",
+    "src/apps/main/views/__init__.py",
+    "src/apps/main/modules/graph_perfo_0d/js_bokeh.py",
+    "src/config/settings/ci.py",
+    "src/config/settings/local.py",
+]
