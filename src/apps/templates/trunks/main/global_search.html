@@ -1,45 +1,65 @@
 {% extends 'trunks/main/base.html' %}
+{% load path_filters %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Résultats pour : "{{ query }}"</h2>
 
-    {% if results.projects or results.etats or results.cas %}
-        {% if results.projects %}
-            <h4 class="mt-4">Projets</h4>
-            <ul>
-                {% for p in results.projects %}
-                    <li><a href="{% url 'lst_projets' %}/{{ p.id }}">{{ p.name }}</a> (créé par {{ p.created_by }})</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    <div class="search-header">
+        <div>
+            <h2 class="search-title">Recherche globale</h2>
+            {% if query %}
+                <div class="text-muted" style="font-size: 0.9rem;">
+                    Résultats pour : <strong>"{{ query }}"</strong>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-        {% if results.etats %}
-            <h4 class="mt-4">États</h4>
-            <ul>
-                {% for e in results.etats %}
-                    <li><a href="{% url 'info_etat' e.id %}">{{ e.name }}</a> (projet : {{ e.projet.name }})</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-
-        {% if results.cas %}
-            <h4 class="mt-4">Cas</h4>
-            <ul>
-                {% for c in results.cas %}
-                    <li>{{ c.name }} (Iso : {{ c.iso_vitesse.name }})(Etat : <a href="{% url 'info_etat' c.iso_vitesse.etat.id %}">{{ c.iso_vitesse.etat.name }}</a>)</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        {% if results.iso_vitesse %}
-            <h4 class="mt-4">IsoVitesse</h4>
-            <ul>
-                {% for i in results.iso_vitesse %}
-                    <li>{{ i.name }} (Etat : <a href="{% url 'info_etat' i.etat.id %}">{{ i.etat.name }}</a>)</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    {% if not query %}
+        <div class="search-empty">
+            Saisir un terme de recherche dans la barre prévue en haut de l’interface.
+        </div>
+    {% elif query and not has_results %}
+        <div class="search-empty">
+            Aucun résultat trouvé pour <strong>"{{ query }}"</strong>.
+        </div>
     {% else %}
-        <p>Aucun résultat trouvé.</p>
+        {# Boucle sur les sections #}
+        {% for section_name, qs in results.items %}
+            {% if qs.exists %}
+                <section class="search-section">
+                    <h4>
+                        {{ section_name|capfirst }}
+                        <span class="section-count">({{ qs|length }})</span>
+                    </h4>
+                    <table class="table table-sm table-striped table-hover table-search">
+                        <thead>
+                            <tr>
+                                {% comment %} Définir dynamiquement les colonnes si besoin {% endcomment %}
+                                <th>Nom</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in qs %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td>
+                                        {% if item.work_directory %}
+                                            <button type="button"
+                                                    onclick="copyToClipboard('{{ item.work_directory|os_path|escapejs }}')"
+                                                    class="btn btn-outline-primary btn-copy-path">
+                                                Copier
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+        {% endfor %}
     {% endif %}
+
 </div>
 {% endblock %}

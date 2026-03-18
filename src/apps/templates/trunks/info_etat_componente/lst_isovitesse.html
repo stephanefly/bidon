@@ -1,170 +1,204 @@
 <style>
-.select-couleur-mini {
-    width: auto;
-    min-width: 110px;
-    max-width: 160px;
-    display: inline-block;
-    padding: 4px 16px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    margin-top: 10px;
-    text-align: center;
-}
-.select-symbole-mini {
-    width: auto;
-    min-width: 110px;
-    max-width: 160px;
-    display: inline-block;
-    padding: 4px 16px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    margin-top: 10px;
-    text-align: center;
-}
-.btn-group-flex {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    max-width: 1700px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    background: transparent;
-    overflow-x: hidden; 
-    justify-content: center;
-}
-
-/* Tous les boutons = même taille EXACTE */
-.btn-group-flex button,
-.btn-group-flex .btn {
-    width: 140px;          /* taille identique pour tous */
-    height: 36px;
-    text-align: center;
-    font-size: 14px !important;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-/* Labels et selects visuellement alignés */
-.btn-group-flex label,
-.btn-group-flex select {
-    width: 140px;
-    height: 36px;
-    font-size: 14px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Input KD (ou autre type) */
-.btn-group-flex input[type="number"] {
-    width: 60px !important;
-    height: 36px;
-    font-size: 14px !important;
-    text-align: center;
-}
-
-/* Bouton icône spécifique */
-.btn-group-flex .btn-icon {
-    width: 40px; 
-    height: 36px;
-    font-size: 18px;
-    padding: 0;
-}
-
-.action-btn {
-    min-width: 130px;
-    max-width: 200px;
-    height: 38px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    background: inherit;
-    border: none;
-    color: #ffffff;
-    text-align: center;
-    white-space: nowrap;
-}
-.recalage-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: {{ iso_vitesse.color }};
-    border-radius: 8px;
-    padding: 0 10px;
-    height: 38px;
-    min-width: 160px;
-    box-sizing: border-box;
-}
-
-.recalage-label {
-    font-weight: 500;
-    font-size: 15px;
-    margin-bottom: 0;
-    margin-right: 2px;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    height: 100%;
-    color: white;
-}
-
-.recalage-checkbox {
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-right: 2px;
-    accent-color: #007bff;
-    width: 17px;
-    height: 17px;
-    vertical-align: middle;
-}
-
-.recalage-input {
-    width: 20px;
-    font-size: 15px;
-    padding: 2px 5px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    text-align: center;
-    height: 30px;
-    margin-left: 2px;
-    background: white;
-}
+   .select-couleur-mini {
+   width: auto;
+   min-width: 110px;
+   max-width: 160px;
+   display: inline-block;
+   padding: 4px 16px;
+   border-radius: 8px;
+   font-size: 1rem;
+   font-weight: bold;
+   margin-bottom: 10px;
+   margin-top: 10px;
+   text-align: center;
+   }
+   .select-symbole-mini {
+   width: auto;
+   min-width: 110px;
+   max-width: 160px;
+   display: inline-block;
+   padding: 4px 16px;
+   border-radius: 8px;
+   font-size: 1rem;
+   font-weight: bold;
+   margin-bottom: 10px;
+   margin-top: 10px;
+   text-align: center;
+   }
+   .btn-group-flex {
+   display: flex;
+   flex-direction: row;
+   flex-wrap: nowrap;
+   align-items: center;
+   gap: 16px;
+   width: 100%;
+   max-width: 1700px;
+   margin: 0 auto;
+   box-sizing: border-box;
+   background: transparent;
+   justify-content: center;
+   /* pour le tooltip */
+   position: relative;
+   z-index: 5;
+   overflow: visible;
+   }
+   /* Tous les boutons = même taille EXACTE */
+   .btn-group-flex button,
+   .btn-group-flex .btn {
+   width: 140px;
+   height: 36px;
+   text-align: center;
+   font-size: 14px !important;
+   font-weight: 500;
+   white-space: nowrap;
+   }
+   /* Labels et selects visuellement alignés */
+   .btn-group-flex label,
+   .btn-group-flex select {
+   width: 120px;
+   height: 36px;
+   font-size: 14px !important;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   }
+   /* Input KD (ou autre type) */
+   .btn-group-flex input[type="number"] {
+   width: 120px;
+   height: 36px;
+   font-size: 14px !important;
+   text-align: center;
+   }
+   /* Bouton icône spécifique */
+   .btn-group-flex .btn-icon {
+   width: 40px;
+   height: 36px;
+   font-size: 18px;
+   padding: 0;
+   }
+   .action-btn {
+   min-width: 130px;
+   max-width: 200px;
+   height: 38px;
+   border-radius: 8px;
+   font-size: 1rem;
+   font-weight: 500;
+   background: inherit;
+   border: none;
+   color: #ffffff;
+   text-align: center;
+   white-space: nowrap;
+   }
+   .recalage-group {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   background: {{ iso_vitesse.color }};
+   border-radius: 8px;
+   padding: 0 10px;
+   height: 38px;
+   min-width: 160px;
+   box-sizing: border-box;
+   position: relative;
+   z-index: 10; /* au-dessus des autres éléments du groupe */
+   }
+   .recalage-label {
+   font-weight: 500;
+   font-size: 15px;
+   margin-bottom: 0;
+   margin-right: 2px;
+   white-space: nowrap;
+   display: flex;
+   align-items: center;
+   height: 100%;
+   color: white;
+   }
+   .recalage-checkbox {
+   margin-top: 0;
+   margin-bottom: 0;
+   margin-right: 2px;
+   accent-color: #007bff;
+   width: 17px;
+   height: 17px;
+   vertical-align: middle;
+   }
+   .recalage-input {
+   width: 140px;
+   font-size: 15px;
+   padding: 2px 5px;
+   border-radius: 6px;
+   border: 1px solid #ccc;
+   text-align: center;
+   height: 30px;
+   margin-left: 2px;
+   background: white;
+   }
+   /* Tooltip KD */
+   .recalage-group::after {
+   content: "• OUI BSAM : On prends le KD defini dans le BSAM";
+   position: absolute;
+   bottom: 100%;
+   left: 50%;
+   transform: translateX(-50%);
+   background: #000;
+   color: #fff;
+   padding: 2px 6px;
+   border-radius: 4px;
+   font-size: 12px;
+   white-space: nowrap;
+   opacity: 0;
+   visibility: hidden;
+   pointer-events: none;
+   transition: opacity 0.15s ease;
+   z-index: 9999;
+   }
+   .recalage-group:hover::after {
+   opacity: 1;
+   visibility: visible;
+   }
 </style>
-
 <div class="container d-flex justify-content-center" style="padding-top: 0px;">
    <div class="d-grid gap-2 col mx-auto">
-   
       {% if bsam_list %}
-      <h5 style="padding-left: 20px;padding-top: 20px;"><b>Liste des cas Bsam</b></h5>
+      <h5 style="
+         text-align: center;
+         margin: 10px 0;
+         font-weight: 600;
+         letter-spacing: 0.5px;
+         ">Liste des cas Bsam</h5>
       {% for iso_vitesse in bsam_list %}
       <!-- Liste des CAS BSAM-->
       {% include 'trunks/info_etat_componente/lst_isovitesse_cas.html' %}
       {% endfor %}
       {% endif %}
-      
+      <hr>
       {% if cannelle_list %}
-      <h5 style="padding-left: 20px;padding-top: 20px;"><b>Liste des cas Cannelle</b></h5>
+      <h5 style="
+         text-align: center;
+         margin: 10px 0;
+         font-weight: 600;
+         letter-spacing: 0.5px;
+         ">Liste des cas Cannelle</h5>
       {% for iso_vitesse in cannelle_list %}
       <!-- Liste des CAS Cannelle-->
       {% include 'trunks/info_etat_componente/lst_isovitesse_cas.html' %}
       {% endfor %}
       {% endif %}
-      
-    {% if cas_user_list %}
-          <h5 style="padding-left: 20px;padding-top: 20px;"><b>Liste des cas personnalisé</b></h5>
-          {% for iso_vitesse in cas_user_list %}
-          <!-- Liste des CAS Cannelle-->
-          {% include 'trunks/info_etat_componente/lst_isovitesse_cas.html' %}
-          {% endfor %}
-          {% endif %}
-      
+      <hr>
+      {% if cas_user_list %}
+      <h5 style="
+         text-align: center;
+         margin: 10px 0;
+         font-weight: 600;
+         letter-spacing: 0.5px;
+         ">
+         Liste des cas personnalisés
+      </h5>
+      {% for iso_vitesse in cas_user_list %}
+      <!-- Liste des CAS Cannelle-->
+      {% include 'trunks/info_etat_componente/lst_isovitesse_cas.html' %}
+      {% endfor %}
+      {% endif %}
    </div>
 </div>
 
@@ -219,290 +253,367 @@ $(document).ready(function () {
         // Met à jour le compteur global
         usedCtr.text(currentUsed);
         document.getElementById("badge-value").innerText = currentUsed;
+        
+        addToast("info",`${data.cas_name} : ${data.used ? "Activé" : "Désactivé"}`);
+
       }
     });
   });
 });
 </script>
 
-<!-- Désactiver tous les cas -->
+
+<!-- Script 1 : utilitaires (UNE SEULE FOIS, hors boucle) -->
+<script>
+   function updateIsoBadge(isoId, usedCas, totalCas) {
+     const badge = document.querySelector(`#iso-vitesse-btn-${isoId} .iso-vitesse-stats`);
+     if (!badge) return;
+   
+     const used = parseInt(usedCas, 10) || 0;
+     const total = parseInt(totalCas, 10) || 0;
+   
+     badge.dataset.used = used;
+     badge.dataset.total = total;
+     badge.textContent = `${used}/${total}`;
+   
+     badge.classList.remove("bg-success", "bg-danger");
+     badge.classList.add(used === 0 ? "bg-danger" : "bg-success");
+   }
+   
+   function getGlobalUsedCount() {
+     const el = document.getElementById("used-count");
+     if (!el) return 0;
+     const n = parseInt((el.textContent || "").replace(/[^\d-]/g, ""), 10);
+     return isNaN(n) ? 0 : n;
+   }
+   
+   function setGlobalUsedCount(value) {
+     const v = Math.max(0, parseInt(value, 10) || 0);
+   
+     const used = document.getElementById("used-count");
+     if (used) used.textContent = v;
+   
+     const badge = document.getElementById("badge-value");
+     if (badge) badge.textContent = v;
+   
+     const allCounter = document.getElementById("all-case-used-counter");
+     if (allCounter) allCounter.setAttribute("data-count", v);
+   }
+</script>
+
+<!-- Script 2 : Désactiver tous les cas (UNE SEULE FOIS, hors boucle) -->
 <script>
 $(document).ready(function () {
-  $('.desactive-all-btn').click(function () {
-    const form      = $(this).closest('.desactive-all-form');
-    const url       = form.data('url');
+  $(document).on("click", ".desactive-all-btn", function () {
+    const btn = $(this);
+    if (btn.data("loading")) return;
+
+    const form = btn.closest(".desactive-all-form");
+    const url = form.data("url");
+    const isoId = form.data("id");
     const csrftoken = form.find('[name=csrfmiddlewaretoken]').val();
+
+    btn.data("loading", true).prop("disabled", true);
 
     $.ajax({
       url: url,
-      type: 'POST',
-      headers: { 'X-CSRFToken': csrftoken },
+      type: "POST",
+      headers: { "X-CSRFToken": csrftoken },
       success: function (data) {
-        if (!data.success) return;
+        if (!data || !data.success) return;
 
-        data.cas_ids.forEach(id => {
-          const icon = $(`.cas-status[data-id="${id}"] i`);
-          icon
-            .removeClass('bi-check-circle-fill text-success')
-            .addClass('bi-x-square-fill text-danger');
+        (data.cas_ids || []).forEach(function (id) {
+          $(`.cas-status[data-id="${id}"] i`)
+            .removeClass("bi-check-circle-fill text-success")
+            .addClass("bi-x-square-fill text-danger");
 
-          const toggleBtn = $(`.toggle-used[data-id="${id}"]`);
-          toggleBtn.find('i')
-            .removeClass('bi-eye-slash')
-            .addClass('bi-eye');
-          toggleBtn.attr('title', 'Activer');
+          const toggle = $(`.toggle-used[data-id="${id}"]`);
+          toggle.find("i").removeClass("bi-eye-slash").addClass("bi-eye");
+          toggle.attr("title", "Activer");
         });
 
-        const statsSpan = $(`.iso-vitesse-stats[data-id="${data.iso_vitesse_id}"]`);
-        statsSpan
-          .removeClass('bg-success bg-danger')
-          .addClass(data.used_cas === 0 ? 'bg-danger' : 'bg-success')
-          .text(`${data.used_cas}/${data.total_cas}`);
+        // Badge iso (ciblé via #iso-vitesse-btn-<id>)
+        updateIsoBadge(isoId, data.used_cas, data.total_cas);
 
-        const globalCount = parseInt($('#used-count').text(), 10) - data.cas_ids.length;
-        $('#used-count').text(globalCount);
-        $('#all-case-used-counter').attr('data-count', globalCount);
-        document.getElementById("badge-value").innerText = globalCount;
+        // Compteur global
+        if (typeof data.used_count !== "undefined" && data.used_count !== null) {
+          setGlobalUsedCount(data.used_count);
+        } else {
+          setGlobalUsedCount(getGlobalUsedCount() - (data.cas_ids ? data.cas_ids.length : 0));
+        }
+
+        addToast("info", `${data.name} : Tous les cas désactivés`, 5000);
+      },
+      complete: function () {
+        btn.data("loading", false).prop("disabled", false);
       }
     });
   });
 });
 </script>
 
-<!-- Activer tous les cas -->
+
+<!-- Script 3 : Activer tous les cas (UNE SEULE FOIS, hors boucle) -->
 <script>
 $(document).ready(function () {
-  $('.active-all-btn').click(function () {
-    const form = $(this).closest('.active-all-form');
-    const url = form.data('url');
-    const isoVitesseId = form.data('id');
+  $(document).on("click", ".active-all-btn", function () {
+    const btn = $(this);
+    if (btn.data("loading")) return;
+
+    const form = btn.closest(".active-all-form");
+    const url = form.data("url");
+    const isoId = form.data("id");
     const csrftoken = form.find('[name=csrfmiddlewaretoken]').val();
+
+    btn.data("loading", true).prop("disabled", true);
 
     $.ajax({
       url: url,
-      type: 'POST',
-      headers: { 'X-CSRFToken': csrftoken },
+      type: "POST",
+      headers: { "X-CSRFToken": csrftoken },
       success: function (data) {
-        if (data.success) {
-          data.cas_ids.forEach(id => {
-            const icon = $(`.cas-status[data-id="${id}"] i`);
-            icon.removeClass('bi-x-square-fill text-danger')
-                .addClass('bi-check-circle-fill text-success');
+        if (!data || !data.success) return;
 
-            const toggleBtn = $(`.toggle-used[data-id="${id}"]`);
-            toggleBtn.find('i')
-              .removeClass('bi-eye')
-              .addClass('bi-eye-slash');
-            toggleBtn.attr('title', 'Désactiver');
-          });
+        (data.cas_ids || []).forEach(function (id) {
+          $(`.cas-status[data-id="${id}"] i`)
+            .removeClass("bi-x-square-fill text-danger")
+            .addClass("bi-check-circle-fill text-success");
 
-          const statsSpan = $(`.iso-vitesse-stats[data-id="${data.iso_vitesse_id}"]`);
-          statsSpan
-            .removeClass('bg-success bg-danger')
-            .addClass(data.used_cas === 0 ? 'bg-danger' : 'bg-success')
-            .text(`${data.used_cas}/${data.total_cas}`);
+          const toggle = $(`.toggle-used[data-id="${id}"]`);
+          toggle.find("i").removeClass("bi-eye").addClass("bi-eye-slash");
+          toggle.attr("title", "Désactiver");
+        });
 
-          $('#used-count').text(function () {
-            const current = parseInt($(this).text());
-            return current + data.cas_ids.length;
-          });
-          $('#all-case-used-counter').attr('data-count', parseInt($('#used-count').text()));
-          document.getElementById("badge-value").innerText = parseInt($('#used-count').text());
+        // Badge iso (ciblé via #iso-vitesse-btn-<id>)
+        updateIsoBadge(isoId, data.used_cas, data.total_cas);
+
+        // Compteur global
+        if (typeof data.used_count !== "undefined" && data.used_count !== null) {
+          setGlobalUsedCount(data.used_count);
+        } else {
+          setGlobalUsedCount(getGlobalUsedCount() + (data.cas_ids ? data.cas_ids.length : 0));
         }
+
+        addToast("info", `${data.name} : Tous les cas activés`, 5000);
+      },
+      complete: function () {
+        btn.data("loading", false).prop("disabled", false);
       }
     });
   });
 });
 </script>
+
 
 <!-- Changer le nom -->
 <script>
-function submitNameChange(id) {
-  const input = document.getElementById(`name-input-${id}`);
-  const value = input.value;
-
-  fetch(`/iso_vitesse/${id}/modify_name/`, {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': '{{ csrf_token }}',
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: `new_name_isovitesse_input=${encodeURIComponent(value)}`
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById(`iso-vitesse-name-${id}`).textContent = data.new_name;
-        const modal = bootstrap.Modal.getInstance(document.getElementById(`modifyIsovitessNameModal${id}`));
-        if (modal) modal.hide();
-      } else {
-        alert("Erreur : " + (data.error || "Nom non mis à jour"));
-      }
-    })
-    .catch(error => {
-      console.error('Erreur AJAX:', error);
-      alert("Erreur de communication avec le serveur.");
-    });
-}
+   function submitNameChange(id) {
+     const input = document.getElementById(`name-input-${id}`);
+     const value = input.value;
+   
+     fetch(`/iso_vitesse/${id}/modify_name/`, {
+       method: 'POST',
+       headers: {
+         'X-CSRFToken': '{{ csrf_token }}',
+         'Content-Type': 'application/x-www-form-urlencoded'
+       },
+       body: `new_name_isovitesse_input=${encodeURIComponent(value)}`
+     })
+       .then(response => response.json())
+       .then(data => {
+         if (data.success) {
+           document.getElementById(`iso-vitesse-name-${id}`).textContent = data.new_name;
+           const modal = bootstrap.Modal.getInstance(document.getElementById(`modifyIsovitessNameModal${id}`));
+           addToast("info",`${data.old_name} --> ${data.new_name}: Nom changé`);
+           if (modal) modal.hide();
+         } else {
+           alert("Erreur : " + (data.error || "Nom non mis à jour"));
+         }
+       })
+       .catch(error => {
+         console.error('Erreur AJAX:', error);
+         alert("Erreur de communication avec le serveur.");
+       });
+   }
 </script>
-
 <!-- Changer la couleur -->
 <script>
-// Changer la couleur (MAJ fond collapse ET groupe de boutons)
-function updateIsovitesseColor(isoId, color) {
-  fetch("{% url 'update_color_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "X-CSRFToken": "{{ csrf_token }}"
-    },
-    body: "color_isovitesse=" + encodeURIComponent(color)
-  })
-  .then(response => {
-    if (response.ok) {
-      // MAJ tous les boutons/badges portant le data-iso-id concerné
-      document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
-        // On évite de toucher au collapse principal qui reste transparent
-        if (el.id !== 'isovitesse' + isoId) {
-          el.style.backgroundColor = color;
-          el.style.borderColor = color;
-          el.style.transition = "background 0.1s, border-color 0.1s";
-        }
-      });
-
-    } else {
-      alert("Erreur lors de la mise à jour !");
-    }
-  })
-  .catch(() => alert("Erreur réseau."));
-}
+   function updateIsovitesseColor(isoId, color) {
+     fetch("{% url 'update_color_item' 'iso_vitesse' 0 %}".replace("0", isoId), {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/x-www-form-urlencoded",
+         "X-CSRFToken": "{{ csrf_token }}"
+       },
+       body: "color_isovitesse=" + encodeURIComponent(color)
+     })
+     .then(response => response.json())
+     .then(data => {
+       toastFromData(data, "info");
+   
+       if (!data || !data.success) return;
+   
+       document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
+         if (el.id !== "isovitesse" + isoId) {
+           el.style.backgroundColor = color;
+           el.style.borderColor = color;
+           el.style.transition = "background 0.1s, border-color 0.1s";
+         }
+       });
+     })
+     .catch(() => {
+       toastFromData({ success:false, message:"Erreur réseau : mise à jour couleur", level:"error" }, "error");
+     });
+   }
 </script>
-
 <!-- Changer le symbole -->
 <script>
-function updateIsovitesseSymbol(isoId, symbol) {
-  fetch("{% url 'update_symbol_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "X-CSRFToken": "{{ csrf_token }}"
-    },
-    body: "symbole_isovitesse=" + encodeURIComponent(symbol)
-  })
-  .then(response => {
-    if (!response.ok) throw new Error("HTTP error " + response.status);
-    // Ici tu peux forcer l’affichage sans attendre de data
-    // Optionnel : mettre à jour l’UI côté JS selon la valeur sélectionnée
-    const select = document.querySelector('.select-symbole-mini[data-iso-id="' + isoId + '"]');
-    if (select) {
-      const badge = document.getElementById('iso-vitesse-symbol-' + isoId);
-      if (badge) badge.textContent = select.selectedOptions[0].textContent;
-    }
-  })
-  .catch(() => alert("Erreur réseau."));
-}
-
+   function updateIsovitesseSymbol(isoId, symbol) {
+     fetch("{% url 'update_symbol_item' 'iso_vitesse' 0 %}".replace("0", isoId), {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/x-www-form-urlencoded",
+         "X-CSRFToken": "{{ csrf_token }}"
+       },
+       body: "symbole_isovitesse=" + encodeURIComponent(symbol)
+     })
+     .then(response => {
+       if (!response.ok) {
+         throw new Error("HTTP error " + response.status);
+       }
+       return response.json();
+     })
+     .then(data => {
+       // Mise à jour UI immédiate
+       const select = document.querySelector(
+         '.select-symbole-mini[data-iso-id="' + isoId + '"]'
+       );
+   
+       if (select) {
+         const badge = document.getElementById("iso-vitesse-symbol-" + isoId);
+         if (badge) {
+           badge.textContent = select.selectedOptions[0].textContent;
+         }
+       }
+   
+       // Feedback utilisateur
+       addToast("info", `${data.name} : Symbole changé`);
+     })
+     .catch(error => {
+       console.error(error);
+       alert("Erreur réseau.");
+     });
+   }
 </script>
-
-<!-- Changer le Recalage KD -->
+<!-- Recalage KD -->
 <script>
-// Initialisation pour tous les toggle KD de la page (à appeler au chargement)
-document.addEventListener("DOMContentLoaded", function() {
-    // Par défaut, on s'assure que les inputs sont bien synchronisés avec leur checkbox
-    document.querySelectorAll('.toggle-kd').forEach(function(checkbox) {
-        syncKDInput(checkbox);
-        checkbox.addEventListener('change', function() {
-            syncKDInput(this);
-        });
-    });
-
-    // On écoute le changement de valeur sur tous les inputs recalage
-    document.querySelectorAll('.recalage-kd-value').forEach(function(input) {
-        input.addEventListener('blur', function() {
-            if (!this.disabled) updateRecalageKD(this);
-        });
-    });
-});
-
-// Fonction qui synchronise l'état du champ avec la checkbox
-function syncKDInput(checkbox) {
-    const id = checkbox.getAttribute('data-id');
-    const input = document.querySelector('.recalage-kd-value[data-id="'+id+'"]');
-    if (checkbox.checked) {
-        input.disabled = false;
-        // Si vide (retour décochage) → 1 par défaut
-        if (!input.value) input.value = 1;
-        updateRecalageKD(input);
-    } else {
-        input.disabled = true;
-        input.value = "";
-        updateRecalageKDNull(input);
-    }
-}
-
-// Mise à jour AJAX (KD utilisateur)
-function updateRecalageKD(inputElem) {
-    const value = inputElem.value;
-    const url = inputElem.getAttribute('data-url');
-    const id = inputElem.getAttribute('data-id');
-    const feedback = document.querySelector('.kd-feedback[data-id="'+id+'"]');
-
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie('csrftoken'),
-        },
-        body: JSON.stringify({ value: value })
-    })
-
-}
-
-// Mise à null (case décochée)
-function updateRecalageKDNull(inputElem) {
-    const url = inputElem.getAttribute('data-url');
-    const id = inputElem.getAttribute('data-id');
-    const feedback = document.querySelector('.kd-feedback[data-id="'+id+'"]');
-
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie('csrftoken'),
-        },
-        body: JSON.stringify({ value: null })
-    })
-    .then(response => {
-        if (!response.ok) throw new Error("Erreur serveur");
-        return response.json();
-    })
-    .then(data => {
-        feedback.textContent = data.success ? "✓" : "Erreur";
-        feedback.style.color = data.success ? "green" : "red";
-        setTimeout(() => feedback.textContent = "", 500);
-    })
-    .catch(() => {
-        feedback.textContent = "Erreur serveur";
-        feedback.style.color = "red";
-        setTimeout(() => feedback.textContent = "", 500);
-    });
-}
-
-// Fonction CSRF Django universelle (si besoin)
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + "=")) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
+   document.addEventListener("DOMContentLoaded", function () {
+   
+     // 1) INIT : affichage uniquement (aucun POST)
+     document.querySelectorAll(".recalage-kd-mode").forEach(function(select) {
+       renderKD(select);
+     });
+   
+     // 2) CHANGE MODE : affichage + POST
+     document.querySelectorAll(".recalage-kd-mode").forEach(function(select) {
+       select.addEventListener("change", function () {
+         renderKD(this);
+         persistKD(this);
+       });
+     });
+   
+     // 3) BLUR VALEUR : POST si mode = oui
+     document.querySelectorAll(".recalage-kd-value").forEach(function(input) {
+       input.addEventListener("blur", function () {
+         if (this.disabled) return;
+   
+         const id = this.getAttribute("data-id");
+         const select = document.querySelector('.recalage-kd-mode[data-id="' + id + '"]');
+         if (!select) return;
+   
+         if (select.value === "oui") {
+           persistKD(select);
+         }
+       });
+     });
+   
+   });
+   
+   function renderKD(select) {
+     const id = select.getAttribute("data-id");
+     const input = document.querySelector('.recalage-kd-value[data-id="' + id + '"]');
+     if (!input) return;
+   
+     const mode = select.value;
+   
+     if (mode === "oui") {
+       input.disabled = false;
+       input.type = "number";
+       input.step = "0.0001";
+       input.min = "0";
+       input.max = "1";
+   
+       // si vide ou texte, on remet une valeur par défaut
+       if (!input.value || input.value === "AUTO" || input.value === "BSAM") {
+         input.value = "1";
+       }
+       return;
+     }
+   
+     // non / bsam : input désactivé + texte
+     input.disabled = true;
+     input.type = "text";
+   
+     if (mode === "auto" || mode === "non") {
+       input.value = "---";
+     }
+   }
+   
+   function persistKD(select) {
+     const id = select.getAttribute("data-id");
+     const input = document.querySelector('.recalage-kd-value[data-id="' + id + '"]');
+     const feedback = document.querySelector('.kd-feedback[data-id="' + id + '"]');
+     if (!input) return;
+   
+     const mode = select.value;
+     const url = input.getAttribute("data-url");
+   
+     const payload = { mode: mode, value: null };
+     if (mode === "oui") payload.value = input.value;
+   
+     fetch(url, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+         "X-CSRFToken": getCookie("csrftoken"),
+       },
+       body: JSON.stringify(payload)
+     })
+     .then(function(response) {
+       if (!response.ok) throw new Error("Erreur serveur");
+       return response.json();
+     })
+     .catch(function() {
+       if (!feedback) return;
+       feedback.textContent = "Erreur serveur";
+       feedback.style.color = "red";
+       setTimeout(function() { feedback.textContent = ""; }, 500);
+     });
+   }
+   
+   // CSRF
+   function getCookie(name) {
+     let cookieValue = null;
+     if (document.cookie && document.cookie !== "") {
+       const cookies = document.cookie.split(";");
+       for (let i = 0; i < cookies.length; i++) {
+         const cookie = cookies[i].trim();
+         if (cookie.substring(0, name.length + 1) === (name + "=")) {
+           cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+           break;
+         }
+       }
+     }
+     return cookieValue;
+   }
 </script>
-

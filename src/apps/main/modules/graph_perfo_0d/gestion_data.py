@@ -1,27 +1,32 @@
-import pandas as pd
-from bsamreader import ThroughFlow
-import h5py
-import re
 import os
+import re
 from datetime import datetime
-import numpy as np
 from typing import Dict, List
 
-from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Border, Side
-
+import h5py
+import numpy as np
+import pandas as pd
+from bsamreader import ThroughFlow
 from django.conf import settings
 from django.template import Context, Template
+from openpyxl import load_workbook
+from openpyxl.styles import Border, Font, PatternFill, Side
 
-from apps.main.models import Cas, IsoVitesse, RowPair, Row
-from apps.main.modules.graph_perfo_0d.get_config_from_row import \
-    get_row_from_antarescard, define_config_list, \
-    read_input_file, get_flux_alias, rename_row
+from apps.main.models import Cas, Row, RowPair
+from apps.main.modules.graph_perfo_0d.utils import (
+    define_config_list,
+    get_flux_alias,
+    get_row_from_antarescard,
+    read_input_file,
+    rename_row,
+)
 
 
 def export_data_html(data, etat):
     # Générer le nom de fichier avec la date actuelle
-    html_filepath = os.path.join(etat.work_directory, f"{settings.PERFOS0D_EXPORT_NAME}.html")
+    current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    new_filename = f"Perfos0D_{etat.projet.name}_{etat.name}_{current_date}.html"
+    html_filepath = os.path.join(etat.work_directory, "Perfo0D", new_filename)
 
     template_path = os.path.join(
         settings.BASE_DIR, "apps", "templates", "trunks", "base_graph_export.html"
@@ -43,35 +48,71 @@ def export_data_html(data, etat):
     with open(html_filepath, "w", encoding="utf-8") as output_file:
         output_file.write(rendered_content)
 
-    print(f"Export Fichier HTML --> {html_filepath}")
+    os.chmod(html_filepath, 0o775)
 
 
 def export_data_excel(data, etat):
     data_all = {}
-    for index, etage in enumerate(list(data.keys())):
-        frames = [df for df in data[etage].values() if not df.empty and not df.isna().all().all()]
-        data_all[etage] = pd.concat(frames, ignore_index=True)
 
-    excel_filepath = os.path.join(etat.work_directory, f"{settings.PERFOS0D_EXPORT_NAME}.xlsx")
+    # Rassembler les DataFrames par étage
+    for etage, etage_data in data.items():
+        frames = [
+            df for df in etage_data.values()
+            if df is not None and not df.empty and not df.isna().all().all()
+        ]
+        data_all[etage] = pd.concat(frames,
+                                    ignore_index=True) if frames else pd.DataFrame()
 
+    # Préparer le nom du fichier
+    current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    new_filename = f"Perfos0D_{etat.projet.name}_{etat.name}_{current_date}.xlsx"
+    excel_filepath = os.path.join(etat.work_directory, "Perfo0D", new_filename)
+
+    # Colonnes à masquer
     column_to_mask = ['element_color', 'id', 'marker', 'is_only_stator']
     colors_by_sheet = {}
 
+    # Export initial vers Excel
     with pd.ExcelWriter(excel_filepath) as writer:
         for sheet, df in data_all.items():
-            colors = df['element_color'].tolist() if 'element_color' in df.columns else ['#000000'] * len(df)
+            if df.empty:
+                df.to_excel(writer, sheet_name=sheet, index=False)
+                continue
+
+            # Récupérer les couleurs
+            colors = df[
+                'element_color'].tolist() if 'element_color' in df.columns else [
+                                                                                    '#000000'] * len(
+                df)
             colors_by_sheet[sheet] = colors
 
-            column_to_mask_exist = [col for col in column_to_mask if col in df.columns]
-            df = df.drop(columns=column_to_mask_exist)
+            # Supprimer colonnes à masquer
+            cols_to_drop = [col for col in column_to_mask if col in df.columns]
+            df = df.drop(columns=cols_to_drop)
+
+            # Réordonner colonnes
             cols = df.columns.tolist()
             if 'name' in cols:
                 cols.insert(0, cols.pop(cols.index('name')))
             if 'data_type' in cols:
                 cols.insert(1, cols.pop(cols.index('data_type')))
             df = df[cols]
+
+            # Tri par Qcorr **à l'intérieur des groupes**
+            group_cols = ['group']  # définir les colonnes de regroupement
+            if 'Qcorr' in df.columns:
+                if all(col in df.columns for col in group_cols):
+                    df = df.groupby(group_cols, sort=False,
+                                    group_keys=False).apply(
+                        lambda x: x.sort_values(by='Qcorr', ascending=True)
+                    ).reset_index(drop=True)
+                else:
+                    df = df.sort_values(by='Qcorr', ascending=True).reset_index(
+                        drop=True)
+
             df.to_excel(writer, sheet_name=sheet, index=False)
 
+    # Mise en forme Excel (bordures et couleurs)
     border = Border(
         left=Side(style='thin', color='000000'),
         right=Side(style='thin', color='000000'),
@@ -82,24 +123,27 @@ def export_data_excel(data, etat):
     wb = load_workbook(excel_filepath)
     for sheet, colors in colors_by_sheet.items():
         ws = wb[sheet]
-        fill_head = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+
+        # Couleur d'en-tête
+        fill_head = PatternFill(start_color='D3D3D3', end_color='D3D3D3',
+                                fill_type='solid')
         for cell in ws[1]:
             cell.fill = fill_head
             cell.border = border
 
+        # Couleur des textes par ligne
         for row_num, couleur in enumerate(colors, start=2):
-            if isinstance(couleur, str) and couleur.startswith("#") and len(couleur) == 7:
-                hexcolor = couleur.replace("#", "")
-                font = Font(color=hexcolor)
-            else:
-                font = None
+            font = Font(color=couleur.replace("#", "")) if isinstance(couleur,
+                                                                      str) and couleur.startswith(
+                "#") else None
             for cell in ws[row_num]:
                 if font:
                     cell.font = font
                 cell.border = border
-    wb.save(excel_filepath)
 
-    print(f"Export Fichier Excel --> {excel_filepath}")
+    wb.save(excel_filepath)
+    os.chmod(excel_filepath, 0o775)
+
 
 def set_data_row(cas):
 
@@ -129,7 +173,6 @@ def set_inlet_outlet_row_obj(case_obj, rowpair_obj):
         row_amont, row_aval = pair_row_name_split[0], pair_row_name_split[0]
     else:
         row_amont, row_aval = pair_row_name_split[0], pair_row_name_split[1]
-    print(case_obj, row_amont, row_aval)
 
     rowpair_obj.entry_row = Row.objects.get(cas=case_obj, name=row_amont)
     rowpair_obj.exit_row = Row.objects.get(cas=case_obj, name=row_aval)
@@ -166,7 +209,7 @@ def extract_average_values(hdfMoy, r_gaz, cp) -> Dict[str, float]:
 
     return extracted
 
-def process_grid(grid, grid_name: str) -> List[Dict]:
+def process_grid(cas, grid, grid_name: str, plan_amont, plan_aval):
     results = []
 
     grid_name_bsam = str(grid["BSAM_NAME"][()].decode())
@@ -174,81 +217,246 @@ def process_grid(grid, grid_name: str) -> List[Dict]:
     r_gaz = grid["Rgaz"][()]
     cp = grid["polynomeCoeff"][()][0]
     gamma = cp / (cp - r_gaz)
-
     if "BSAM_Cuts" not in grid:
         return results
 
-    for plane_name in ['Inlet', 'Outlet']:
-        if "inlet" in plane_name.lower() or "outlet" in plane_name.lower():
-            plane_hdf = grid["BSAM_Cuts"][plane_name]
+    for plane_name in [plan_amont, plan_aval]:
 
-            if grid_name and grid_name.startswith('2.'):
-                grid_flow = "Secondaire"
-            elif grid_name and grid_name.startswith('3.'):
-                grid_flow = "Primaire"
-            else:
-                grid_flow = "Total"
+        plane_hdf = grid["BSAM_Cuts"][plane_name]
 
-            flow = None
-            if 'BSAM_' in plane_name:
-                n_flow = plane_name.split('BSAM_')[-1].split('_')[0]
-                flow = {"1": "Total", "2": "Secondaire", "3": "Primaire"}.get(n_flow)
-            elif '_Prim' in plane_name:
-                flow = "Primaire"
-            elif '_Sec' in plane_name:
-                flow = "Secondaire"
-            elif plane_name.startswith('1.'):
-                flow = "Total"
-            elif plane_name.startswith('2.'):
-                flow = "Secondaire"
-            elif plane_name.startswith('3.'):
-                flow = "Primaire"
+        if grid_name and grid_name.startswith('2.'):
+            grid_flow = "Secondaire"
+        elif grid_name and grid_name.startswith('3.'):
+            grid_flow = "Primaire"
+        else:
+            grid_flow = "Total"
 
-            grid_flow_name = flow if flow else grid_flow
+        flow = None
+        if 'BSAM_' in plane_name:
+            n_flow = plane_name.split('BSAM_')[-1].split('_')[0]
+            flow = {"1": "Total", "2": "Secondaire", "3": "Primaire"}.get(n_flow)
+        elif '_Prim' in plane_name:
+            flow = "Primaire"
+        elif '_Sec' in plane_name:
+            flow = "Secondaire"
+        elif plane_name.startswith('1.'):
+            flow = "Total"
+        elif plane_name.startswith('2.'):
+            flow = "Secondaire"
+        elif plane_name.startswith('3.'):
+            flow = "Primaire"
 
-            for instant in plane_hdf:
-                plane_instant_hdf = plane_hdf[instant]
-                if "Average" not in plane_instant_hdf:
-                    continue
+        grid_flow_name = flow if flow else grid_flow
 
-                plane_instant_0d_hdf = plane_instant_hdf["Average"]
+        for instant in plane_hdf:
+            plane_instant_hdf = plane_hdf[instant]
+            if "Average" not in plane_instant_hdf:
+                continue
 
-                for moy_0d in ["Moyenne_type_5"]:
-                    if moy_0d in plane_instant_0d_hdf:
-                        hdfMoy = plane_instant_0d_hdf[moy_0d]
-                        extracted = extract_average_values(hdfMoy, r_gaz, cp)
-                        for var, value in extracted.items():
-                            results.append({
-                                "BSAM_Name": grid_name_bsam,
-                                "Omega": grid_omega,
-                                "Plane_Name": plane_name,
-                                "Flow": grid_flow_name,
-                                "Variable": var,
-                                "Value": value,
-                                "gamma": gamma,
-                                "r_gaz": r_gaz,
-                                "cp": cp,
-                            })
-                        break
+            plane_instant_0d_hdf = plane_instant_hdf["Average"]
+
+            for moy_0d in ["Moyenne_type_5_10", "Moyenne_type_5"]:
+                if moy_0d in plane_instant_0d_hdf:
+                    hdfMoy = plane_instant_0d_hdf[moy_0d]
+                    extracted = extract_average_values(hdfMoy, r_gaz, cp)
+                    for var, value in extracted.items():
+                        results.append({
+                            "BSAM_Name": grid_name_bsam,
+                            "Omega": grid_omega,
+                            "Plane_Name": plane_name,
+                            "Flow": grid_flow_name,
+                            "Variable": var,
+                            "Value": value,
+                            "gamma": gamma,
+                            "r_gaz": r_gaz,
+                            "cp": cp,
+                        })
+                    break
 
     return results
 
-def load_hdf_data(cas) -> pd.DataFrame:
+def check_planes_availibility(planes, user_planes, default_planes=['Inlet', 'Outlet']):
+    plane_inlet = default_planes[0]
+    plane_outlet = default_planes[-1]
+    for plane_name in planes:
+        if user_planes[0].lower() in plane_name.lower():
+            plane_inlet = plane_name
+        if user_planes[-1].lower() in plane_name.lower():
+            plane_outlet = plane_name
+
+    return [plane_inlet, plane_outlet]
+
+
+def load_hdf_data(cas, rowpair_name, plane_dict):
+    plan_amont = cas.iso_vitesse.etat.plan_amont_selected
+    plan_aval = cas.iso_vitesse.etat.plan_aval_selected
     data = []
+
     with h5py.File(cas.file_path, 'r') as f:
         for grid_name in f:
             if grid_name in ["CGNSLibraryVersion", "DataNozzle"]:
                 continue
             grid = f[grid_name]
-            data.extend(process_grid(grid, grid_name))
+            planes = check_planes_availibility(grid["BSAM_Cuts"], [plan_amont, plan_aval])
+            results = process_grid(cas, grid, grid_name, planes[0], planes[1])
+
+            for element in results:
+                if element["BSAM_Name"] == rowpair_name:
+                    plane_dict[rowpair_name][cas.id] = planes
+
+            data.extend(results)
 
     df = pd.DataFrame(data)
 
-    row_list = df["BSAM_Name"].dropna().unique().tolist()
-    df_filtered = df[df['Plane_Name'].isin(['Inlet', 'Outlet'])]
-    df_filtered["BSAM_Name"] = df_filtered["BSAM_Name"].apply(rename_row)
+    row_list = [
+        rename_row(x)
+        for x in df["BSAM_Name"].dropna().unique().tolist()
+    ]
+    df["BSAM_Name"] = df["BSAM_Name"].apply(rename_row)
 
-    return df_filtered
+    return df, row_list, plane_dict
+
+
+def get_hdf_moy(cas, plane):
+    with h5py.File(cas.file_path, 'r') as f:
+        for grid_name in f:
+            if grid_name in ["CGNSLibraryVersion", "DataNozzle"]:
+                continue
+            grid = f[grid_name]
+
+            for plane_name in plane:
+                if "inlet" in plane_name.lower() or "outlet" in plane_name.lower():
+                    plane_hdf = grid["BSAM_Cuts"][plane_name]
+                    for instant in plane_hdf:
+                        plane_instant_hdf = plane_hdf[instant]
+                        plane_instant_0d_hdf = plane_instant_hdf["Average"]
+                        for moy_0d in ["Moyenne_type_5_10", "Moyenne_type_5"]:
+                            if moy_0d in plane_instant_0d_hdf:
+                                extract_and_save_moy(cas, moy_0d)
+                                break
+
+
+def extract_and_save_moy(cas, str_moy):
+    parts = str_moy.split("_")
+
+    # Cas HDF : Moyenne_type_X ou Moyenne_type_X_Y
+    if str_moy.startswith("Moyenne_type_"):
+        cas.moyenne_type = str_moy.replace("Moyenne_type_", "")
+        cas.save()
+
+    # Cas Excel : Perfos0D_moy_X
+    elif "_moy_" in str_moy:
+        cas.moyenne_type = "5_" + parts[-1]
+        cas.save()
+
+
+def get_planes_on_communs(etat, lst_cas_cannelle_active_hdf):
+
+    liste_sets_amont = []
+    liste_sets_aval = []
+
+    for cas_hdf in lst_cas_cannelle_active_hdf:
+        amont_planes_cas = []
+        aval_planes_cas = []
+
+        with h5py.File(cas_hdf.file_path, "r") as f:
+            for grid_name in f:
+                if grid_name in ("CGNSLibraryVersion", "DataNozzle"):
+                    continue
+
+                grid = f[grid_name]
+                if "BSAM_Cuts" not in grid:
+                    continue
+
+                for plane_str in grid["BSAM_Cuts"]:
+
+                    if ("BA" in plane_str) or ("Inlet" in plane_str):
+                        amont_planes_cas.append(plane_str)
+
+                    if ("BF" in plane_str) or ("Outlet" in plane_str):
+                        aval_planes_cas.append(plane_str)
+
+        if amont_planes_cas:
+            liste_sets_amont.extend(amont_planes_cas)
+
+        if aval_planes_cas:
+            liste_sets_aval.extend(aval_planes_cas)
+
+    return liste_sets_amont, liste_sets_aval
+
+
+def sort_planes(planes):
+
+    lst_planes_sorted = []
+
+    for plan in planes:
+
+        if plan == "Inlet":
+            lst_planes_sorted.append(((0, 0), plan))
+
+        elif plan == "Outlet":
+            lst_planes_sorted.append(((1, 0), plan))
+
+        elif plan == "BA":
+            lst_planes_sorted.append(((2, 0), plan))
+
+        elif plan.startswith("BA-"):
+            number = int(plan.split("-")[1])
+            lst_planes_sorted.append(((3, number), plan))
+
+        elif plan == "BF":
+            lst_planes_sorted.append(((4, 0), plan))
+
+        elif plan.startswith("BF+"):
+            number = int(plan.split("+")[1])
+            lst_planes_sorted.append(((5, number), plan))
+
+    lst_planes_sorted.sort()
+
+    return [plan[1] for plan in lst_planes_sorted]
+
+
+def get_plane_configuration(etat):
+
+    lst_cas_cannelle_active_hdf = Cas.objects.filter(
+        iso_vitesse__etat=etat,
+        iso_vitesse__file_type="hdf",
+        used=True
+    )
+
+    plans_amont_communs, plans_aval_communs = (
+        get_planes_on_communs(etat, lst_cas_cannelle_active_hdf))
+
+    plane_BA = sort_planes(extract_BA_BF_planes(plans_amont_communs, "BA"))
+    plane_BF = sort_planes(extract_BA_BF_planes(plans_aval_communs, "BF"))
+
+    if etat.plan_amont != plane_BA or etat.plan_aval != plane_BF:
+        etat.plan_amont = plane_BA
+        etat.plan_aval = plane_BF
+        for cas_hdf in lst_cas_cannelle_active_hdf:
+            cas_hdf.calculate_perfo = False
+            cas_hdf.save()
+        etat.save()
+
+    return plans_amont_communs, plans_aval_communs
+
+def extract_BA_BF_planes(plans, prefix):
+    result = []
+
+    for p in plans:
+        if p in ["Inlet", "Outlet"]:
+            if p not in result:
+                result.append(p)
+            continue
+        if "(" not in p:
+            continue
+        level = p.split("(")[1].replace(")", "")
+
+        if level.startswith(prefix) and level not in result:
+            result.append(level)
+
+    result.sort()
+    return result
 
 def load_bdd_data(cas, pair_row):
     rp = RowPair.objects.get(cas=cas, name=pair_row)
@@ -271,13 +479,15 @@ def load_bdd_data(cas, pair_row):
     return data, rp
 
 def get_value_from_df_hdf(df, name, plane, variable):
-    value = df[
+
+    values = df[
         (df['BSAM_Name'] == name) &
         (df['Plane_Name'] == plane) &
         (df['Variable'] == variable)
-        ]['Value'].values
+    ]['Value'].values
 
-    return value[0]
+    return values[0] if len(values) > 0 else None
+
 
 def set_type_of_rowpair(rowpair, sheet_name):
     if sheet_name == 'Global':
@@ -290,19 +500,6 @@ def set_type_of_rowpair(rowpair, sheet_name):
         rowpair.type = 'isole'
     rowpair.save()
 
-def add_cas_info(df, cas_inner):
-
-    # Enrichissement pour affichage
-    df["element_color"] = cas_inner.iso_vitesse.color
-    df["group"] = cas_inner.iso_vitesse.name
-    df["name"] = cas_inner.name
-    df["id"] = cas_inner.id
-    df["selected"] = cas_inner.select
-    df["marker"] = cas_inner.iso_vitesse.marker
-    df["fill_alpha"] = df["selected"].apply(lambda x: 8 if x else 1)
-    df["line_width"] = df["selected"].apply(lambda x: 8 if x else 1)
-
-    return df
 
 def get_row_from_bsam(bsam):
 
@@ -388,30 +585,6 @@ def make_json_serializable(obj):
         return str(obj)  # fallback
     return obj
 
-def find_key_in_data(data, key_to_search):
-
-    if isinstance(data, dict):
-        for key in data:
-            if key == key_to_search:
-                if key_to_search in data:
-                    return data[key_to_search]
-
-        for value in data.values():
-            results = find_key_in_data(value, key_to_search)
-            if results is not None:
-                return results
-
-    elif isinstance(data, (list, tuple, set)):
-        for element in data:
-            resultat = find_key_in_data(element, key_to_search)
-            if resultat is not None:
-                return resultat
-
-    elif isinstance(data, pd.DataFrame):
-        if key_to_search in data.columns:
-            return data[key_to_search].values[0]
-
-    return None
 
 def get_sheet_name_from_rowpair(file_path, rowpair_obj):
 
@@ -433,6 +606,22 @@ def get_sheet_name_from_rowpair(file_path, rowpair_obj):
         if downstream_plane is not None:
             row_name_down = rename_row(downstream_plane.iloc[0].split('_')[0])
 
-        print(row_name_up, row_name_down)
         if row_name_up == row_amont and row_name_down == row_aval:
             return sheet
+
+def make_planes_tab_data(all_plane_dict):
+    # récupérer tous les ids existants
+    all_cas = set()
+    for rowpair in all_plane_dict:
+        for cas in all_plane_dict[rowpair]:
+            all_cas.add(cas)
+
+    # compléter les ids manquants avec valeur par défaut
+    for rowpair in all_plane_dict:
+        for cas in all_cas:
+            try:
+                if not all_plane_dict[rowpair][cas]:
+                    all_plane_dict[rowpair][cas] = ['Inlet', 'Outlet']
+            except:
+                pass
+    return all_plane_dict

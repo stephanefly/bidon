@@ -1,10 +1,10 @@
-from typing import Union
-from bsamreader.average import RadialEntropicAverage
-from bsamreader.core import intersect, degree
-from scipy.interpolate import interp1d, make_interp_spline, lagrange
-import numpy as np
-from numpy.polynomial import Polynomial
 import math
+
+import numpy as np
+from bsamreader.average import RadialEntropicAverage
+from bsamreader.core import degree, intersect
+from numpy.polynomial import Polynomial
+from scipy.interpolate import interp1d, lagrange, make_interp_spline
 
 
 def P3(polynome, valeurs):
@@ -111,6 +111,7 @@ def intersection2D(X1, R1, X2, R2, reverse=False):
 
 import time
 
+
 class GestionCarac:
     def __init__(self, tf, row, hauteurs):
         start_time = time.perf_counter()
@@ -128,48 +129,48 @@ class GestionCarac:
         self.hhmean = self.hhmean()
         self.hhemp = self.hhemp()
         elapsed = time.perf_counter() - start_time
-        print(f"{self.__class__.__name__}.__init__ exécutée en {elapsed:.6f} secondes.")
+        # print(f"{self.__class__.__name__}.__init__ exécutée en {elapsed:.6f} secondes.")
 
     def timed_init(self, tf, row, hauteurs):
         start = time.perf_counter()
         self.tf = tf
-        print(f"self.tf = tf : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.tf = tf : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.row_obj = self.tf.get_row_zone(row)[0]
-        print(f"self.row_obj = ... : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.row_obj = ... : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.hauteurs = hauteurs
-        print(f"self.hauteurs = hauteurs : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.hauteurs = hauteurs : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xr_le(self.row_obj)
-        print(f"self.xr_le : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xr_le : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xr_te_caviar(self.row_obj)
-        print(f"self.xr_te_caviar : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xr_te_caviar : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xr_te_carma(self.row_obj)
-        print(f"self.xr_te_carma : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xr_te_carma : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xyzr_le_te_genepi()
-        print(f"self.xyzr_le_te_genepi : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xyzr_le_te_genepi : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xr_mean()
-        print(f"self.xr_mean : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xr_mean : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.xr_emp()
-        print(f"self.xr_emp : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.xr_emp : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.hh1 = self.hh1()
-        print(f"self.hh1 = self.hh1() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.hh1 = self.hh1() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.hh2 = self.hh2()
-        print(f"self.hh2 = self.hh2() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.hh2 = self.hh2() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.hhmean = self.hhmean()
-        print(f"self.hhmean = self.hhmean() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.hhmean = self.hhmean() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
         self.hhemp = self.hhemp()
-        print(f"self.hhemp = self.hhemp() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
+        # print(f"self.hhemp = self.hhemp() : {time.perf_counter() - start:.6f} s"); start = time.perf_counter()
 
 
 
@@ -178,17 +179,19 @@ class GestionCarac:
     #      'qdebz', 'h', 'Tt', 'pt', 'rho', 'alpha', 'V', 'a', 'M', 'Mm', 'S',
     #      'U', 'Wt', 'W', 'Mw', 'beta', 'Ttw', 'ptw'])
     def xr_le(self, row):
-        self.xle, self.rle = row.le(row.qdebz).T
-        return self.xle, self.rle
+        v = row.qdebz
+        self.xle, self.rle = row.le(v).T
+        # return row.le(v).T
 
     def xr_te_caviar(self, row):
-        te = row.te_caviar  # ← récupère le spline CACHÉ
-        self.xte_caviar, self.rte_caviar = te(row.qdebz).T
-        return self.xte_caviar, self.rte_caviar
+        v = row.qdebz
+        self.xte_caviar, self.rte_caviar = row.te_caviar(v).T
+        # return row.te_caviar(v).T
 
     def xr_te_carma(self, row):
-        self.xte_carma, self.rte_carma = row.te_carma(row.qdebz).T
-        return self.xte_carma, self.rte_carma
+        v = row.qdebz
+        self.xte_carma, self.rte_carma = row.te_carma(v).T
+        # return row.te_carma(v).T
 
     def xr_mean(self):
         self.xmean = (self.xle + self.xte_caviar) / 2
@@ -208,6 +211,7 @@ class GestionCarac:
         delta = 0.01 * (Inf[1] - Sup[1])
         RBA = np.arange(101) / 100.0 * (Inf[1] - Sup[1] + 2 * delta) + Sup[1] - delta
         XBA = P3(self.row_obj.xle.coef, RBA)
+
         # XBA = Polynomial(self.row_obj.xle.coef)
         # XBA_ = self.row_obj.xle.coef[0] + self.row_obj.xle.coef[1] * RBA + self.row_obj.xle.coef[2] * RBA * RBA + \
         #       self.row_obj.xle.coef[3] * RBA * RBA * RBA
@@ -216,19 +220,22 @@ class GestionCarac:
         for i in range(self.row_obj.n_streamlines):
             streamline = self.row_obj.get_streamline(i)
             x_strl, r_strl = streamline.x, streamline.r
-            # xr_strl = make_interp_spline(x_strl, r_strl, k=degree(len(x_strl)))
+
             res = intersection2D(XBA, RBA, x_strl, r_strl)
             if res is not None:
                 xba.append(res[0])
                 rba.append(res[1])
-            # rle = intersect(XBA, xr_strl, estimate=[x_strl[-1], r_strl[-1]])[1]
-            # xba.append(self.row_obj.xle(rle))
-            # rba.append(rle)
+            else:
+                xr_strl = make_interp_spline(x_strl, r_strl, k=degree(len(x_strl)))
+                rle = intersect(self.row_obj.xle, xr_strl, estimate=[x_strl[0], r_strl[0]])[1]
+                xba.append(self.row_obj.xle(rle))
+                rba.append(rle)
 
         xba = np.array(xba)
         rba = np.array(rba)
-
+        
         # calcul du polynome associé à la cordeaxiale
+        print(rba)
         dd = (rba[-1] - rba[0]) / 3.
         cordax_x = []
         cordax_r = []
@@ -246,12 +253,12 @@ class GestionCarac:
 
         # calcul du polyBF
         polyBF = [0, 0, 0, 0]
-        for index in range(4):
-            # polyBF[index] = bsam[0][row]["BA"][index] + polyCordeAx[index]
-            polyBF[index] = self.row_obj.xle.coef[index] + polyCordeAx[index]
+        if len(polyCordeAx) == 4:
+            for index in range(4):
+                # polyBF[index] = bsam[0][row]["BA"][index] + polyCordeAx[index]
+                polyBF[index] = self.row_obj.xle.coef[index] + polyCordeAx[index]
 
         # Trailing edge
-
         XBF2 = P3(polyBF, RBA)
         # XBF2 = Polynomial(polyBF)
 
@@ -259,14 +266,16 @@ class GestionCarac:
         for i in range(self.row_obj.n_streamlines):
             streamline = self.row_obj.get_streamline(i)
             x_strl, r_strl = streamline.x, streamline.r
-            xr_strl = make_interp_spline(x_strl, r_strl, k=degree(len(x_strl)))
-            # rte = intersect(XBF2, xr_strl, estimate=[x_strl[-1], r_strl[-1]])[1]
-            # xbf.append(XBF2(rte))
-            # rbf.append(rte)
+
             res = intersection2D(XBF2, RBA, x_strl, r_strl, reverse=True)
             if res is not None:
                 xbf.append(res[0])
                 rbf.append(res[1])
+            else:
+                xr_strl = make_interp_spline(x_strl, r_strl, k=degree(len(x_strl)))
+                rte = intersect(self.row_obj.xte, xr_strl, estimate=[x_strl[0], r_strl[0]])[1]
+                xbf.append(self.row_obj.xte(rte))
+                rbf.append(rte)
 
         xbf = np.array(xbf)
         rbf = np.array(rbf)
@@ -354,7 +363,7 @@ class GestionCarac:
             return methode()
 
     def _calculer_avec_hauteur_new(self, x, y, height=None):
-        interp_func = make_interp_spline(x, y, k=2)
+        interp_func = make_interp_spline(x, y, k=degree(len(x)))
         if height is None:
             height = self.hauteurs
         return [interp_func(h) for h in height]
@@ -376,6 +385,11 @@ class CaracCalculator(GestionCarac):
         dgamx = Polynomial(self.row_obj._dct["dgamx"])
         return stagger(self.rmean) + dgamx(self.rmean)
 
+    def calage_carma(self):
+        stagger = self.row_obj.stagger
+        dgamx = Polynomial(self.row_obj._dct["dgamx"])
+        return stagger(self.remp) + dgamx(self.remp)
+    
     def calage_genepi(self):
         inv = -1 if self.yle_genepi[0] > self.yte_genepi[0] else 1
         return inv * np.degrees(np.arccos(self.corde_merid_genepi() / self.corde_genepi()))
@@ -427,6 +441,11 @@ class CaracCalculator(GestionCarac):
     def corde_merid_genepi(self):
         return np.sqrt((self.xte_genepi - self.xle_genepi) ** 2 + (self.zte_genepi - self.zle_genepi) ** 2)
 
+    def corde_carma(self):
+        cx = self.row_obj.cx_carma
+        stagger = self.calage_carma()
+        return cx(self.remp) * np.sqrt(1 + np.tan(np.radians(stagger)) ** 2)
+
     def corde_aero(self):
         cm = self.corde_merid()
         stagger = self.calage()
@@ -475,7 +494,10 @@ class CaracCalculator(GestionCarac):
 
         corde = self.corde_genepi()
         rte_adim = self.hauteur_adim_genepi(self.rte_genepi)
-        interp = interp1d(rte_adim, corde, kind='cubic', bounds_error=False)
+        try:
+            interp = interp1d(rte_adim, corde, kind='cubic', bounds_error=False)
+        except:
+            interp = interp1d(rte_adim, corde, kind='linear', bounds_error=False)
         crdm = (interp(np.array([0.0]))[0] + interp(np.array([1.0]))[0] + 4 * interp(np.array([0.5]))[0]) / 6.0
 
         return h_mean / crdm
@@ -654,6 +676,9 @@ class CaracCalculator(GestionCarac):
     def calculer_corde_genepi(self):
         return self._calculer_avec_hauteur_new(self.hhemp, 1000 * self.corde_genepi())
 
+    def calculer_corde_carma(self):
+        return self._calculer_avec_hauteur_new(self.hhemp, 1000 * self.corde_carma())
+        
     def calculer_emaxsc(self):
         return self._calculer_avec_hauteur_new(self.hhemp, self.emaxsc())
 
@@ -753,6 +778,11 @@ class CaracCalculator(GestionCarac):
 
     def calculer_dstd1(self):
         average = RadialEntropicAverage(self.row_obj.inlet)
+        debit = self.tf.debn * self.row_obj.inlet.qdjz
+        return [self.dstd(debit, average.Tt, average.pt)]
+
+    def calculer_dstd1_genepi(self):
+        average = RadialEntropicAverage(self.row_obj.inlet)
         debit = self.tf.debn
         return [self.dstd(debit, average.Tt, average.pt)]
 
@@ -781,12 +811,30 @@ class CaracCalculator(GestionCarac):
             row_next = lst_row[irow_next]
             row_obj_next = self.tf.get_row_zone(row_next)[0]
 
-            xte_current, rte_current = self.xr_te_caviar(self.row_obj)
-            xle_next, rle_next  = self.xr_le(row_obj_next)
+            v = self.row_obj.qdebz
+            xte_current, rte_current = self.xte_caviar, self.rte_caviar
+            xle_next, rle_next  = row_obj_next.le(v).T
             axial_gaps = 1000 * (xle_next - xte_current)
 
             hadim = self.hauteur_adim(xle_next, rle_next)
 
             return self._calculer_avec_hauteur_new(hadim, axial_gaps)
 
+    def calculer_jeu_meridien(self):
 
+        lst_row = self.tf.rows_names
+        irow_current = lst_row.index(self.row_obj.name)
+        irow_next = irow_current + 1
+
+        if irow_next < len(lst_row):
+            row_next = lst_row[irow_next]
+            row_obj_next = self.tf.get_row_zone(row_next)[0]
+
+            v = self.row_obj.qdebz
+            xte_current, rte_current = self.xte_caviar, self.rte_caviar
+            xle_next, rle_next = row_obj_next.le(v).T
+            meridien_gaps = 1000 * np.sqrt((xle_next - xte_current)**2 + (rle_next - rte_current)**2)
+
+            hadim = self.hauteur_adim(xle_next, rle_next)
+
+            return self._calculer_avec_hauteur_new(hadim, meridien_gaps)

@@ -7,6 +7,8 @@ SECRET_KEY = get_env("SAFRANAE_DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+BASE_DIR = Path(__file__).resolve().parents[2]
+
 
 ALLOWED_HOSTS = get_env("SAFRANAE_ALLOWED_HOSTS").split(",")
 
@@ -21,33 +23,15 @@ DATABASES = {
         "PASSWORD": get_env("SAFRANAE_DB_PASSWORD"),
     }
 }
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "apps/templates"],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "django_login.context_processors.project_name",
-                "django_login.context_processors.login_message",
-                "django_login.context_processors.compliance_mode",
-                "django_login.context_processors.retention_days",
-                # "django_login.context_processors.show_ldap_login_button",
-            ],
-        },
-    },
-]
 
 ADMINS = []
 
-FORCE_SCRIPT_NAME = '/trunks'
+FORCE_SCRIPT_NAME = "/trunks"
 
-STATIC_ROOT = get_env("SAFRANAE_STATIC_ROOT")
 STATIC_URL = FORCE_SCRIPT_NAME + "/static/"
+STATIC_ROOT = get_env("SAFRANAE_STATIC_ROOT")
+
+
 
 MEDIA_ROOT = get_env("SAFRANAE_MEDIA_ROOT")
 MEDIA_URL = FORCE_SCRIPT_NAME + "/media/"
@@ -70,6 +54,28 @@ INSTALLED_APPS = [
     "django_login",
 ]
 
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            BASE_DIR / "apps" / "templates",
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "django_login.context_processors.project_name",
+                "django_login.context_processors.login_message",
+                "django_login.context_processors.compliance_mode",
+                "django_login.context_processors.retention_days",
+                "django_login.context_processors.show_ldap_login_button",
+            ],
+        },
+    },
+]
 
 LOGGING = {
     "version": 1,
@@ -108,4 +114,13 @@ LOGGING = {
     },
 }
 
-WORKING_REPERTORY = get_env("WORKING_REPERTORY")
+
+EXCEL_POST_ANNA_PATH_7 = r"post/postAnNA/Perfos0D_moy_7.xlsx"
+EXCEL_POST_ANTARES_PATH_7 = r"post/postAntares/Perfos0D_moy_7.xlsx"
+EXCEL_POST_ANNA_PATH_10 = r"post/postAnNA/Perfos0D_moy_10.xlsx"
+EXCEL_POST_ANTARES_PATH_10 = r"post/postAntares/Perfos0D_moy_10.xlsx"
+HDF5_PATH = r"post/postAnNA/Gradients_Complets.trac"
+BSAM_PATH = r"init/bc_BSAM"
+PERFOS0D_EXPORT_NAME = "export_perfos0D"
+
+WORKING_REPERTORY = r"//data/_R_et_T/H7-MAORI/DTP-1/Veine/Calculs/RM9_RD9/TOUT/TEST-TRUNKS"

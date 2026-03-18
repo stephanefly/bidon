@@ -4,7 +4,8 @@
 {% load bootstrap5 %}
 {% bootstrap_css %}
 {% bootstrap_javascript %}
-
+{% load path_filters %}
+{% load permissions_tags %}
 
 <head>
     <meta charset="UTF-8">
@@ -17,144 +18,343 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-3.1.0.min.css">
-    <link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-3.1.0.min.css">
+<link rel="stylesheet" href="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.0.min.css">
+<link rel="stylesheet" href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.0.min.css">
+
 
     <!-- JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+    <style>
+
+      .custom-dropdown { background-color:#471448;border-radius:8px;font-size:smaller; }
+      .custom-dropdown .nav-link { color:#fff !important;font-weight:bold;padding:8px 16px;display:block;border-radius:6px;transition:background-color .1s ease; }
+      .custom-dropdown .nav-link:hover, .custom-dropdown .nav-item.active .nav-link { background-color:#744296;color:#fff !important; }
+        .nav-link:hover {
+          color:#ffffff !important;
+        }
+        .nav-link:hover, .nav-item.active .nav-link {
+  background-color: #461447;
+  color: #ffffff !important; /* texte bien lisible */
+}
+
+      .toast-stack{ position:fixed; top:60px; right:20px; width:380px; display:flex; flex-direction:column; gap:10px; z-index:20000; }
+      .toast-item{ border-radius:10px; box-shadow:10px 5px 20px rgba(0,0,0,0.75); overflow:hidden; border:2px solid transparent; opacity:0; transform:translateX(60px); transition:transform 250ms ease, opacity 250ms ease; }
+      .toast-item.toast-show{ opacity:1; transform:translateX(0); }
+      .toast-item.toast-hide{ opacity:0; transform:translateX(20px); }
+      .toast-head{ display:flex; justify-content:space-between; align-items:center; padding:8px 10px; font-weight:bold; }
+      .toast-body{ padding:10px; font-size:.92rem; }
+      .toast-close{ background:transparent; border:none; font-size:20px; line-height:1; cursor:pointer; color:inherit; padding:0 4px; }
+
+.toast-error{
+  background:#ffe6e6;
+  border-color:#b30000;
+  color:#7a0000;
+}
+.toast-error .toast-head{
+  background:#b30000;
+  color:#fff;
+}
+
+.toast-info{
+  background:#e6f2ff;
+  border-color:#9d5f9d;
+  color:#471448;
+}
+.toast-info .toast-head{
+  background:#471448;
+  color:#fff;
+}
+
+.toast-copie{
+  background:#e6f2ff;
+  border-color:#c4f4ff;
+  color:#1091ad;
+}
+.toast-copie .toast-head{
+  background:#1090ac;
+  color:#fff;
+}
+
+/* ✅ NOUVEAU : fichiers générés */
+.toast-genere{
+  background:#e9fff2;
+  border-color:#7ad3a1;
+  color:#1f7a4d;
+}
+.toast-genere .toast-head{
+  background:#1f7a4d;
+  color:#fff;
+}
+
+      
+      @media (max-width: 992px){
+        .toast-stack{ right:10px; left:10px; width:auto; }
+      }
+    </style>
 </head>
 
-<style>
-    /* Fond du dropdown */
-.custom-dropdown {
-  background-color: #471448; /* violet */
-  border-radius: 8px;
-  font-size: smaller;
-}
+<body style="background-image: url('{% static 'img/back3.jpg' %}');">
 
-/* Liens par défaut */
-.custom-dropdown .nav-link {
-  color: #fff !important;
-  font-weight: bold;
-  padding: 8px 16px;
-  display: block;
-  border-radius: 6px;
-  transition: background-color 0.1s ease;
-}
-
-/* Hover et actif */
-.custom-dropdown .nav-link:hover,
-.custom-dropdown .nav-item.active .nav-link {
-  background-color: #744296; /* violet plus foncé */
-  color: #fff !important;
-}
-
-</style>
-
-
+<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
-    <a class="navbar-brand" href="#" style="padding-left:10px">
-        TRUNKS </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarNav" aria-controls="navbarNav"
-            aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-<div class="collapse navbar-collapse justify-content-center" id="navbarNav" style="margin-right:100px; position:relative; z-index:9999;">
-        <ul class="navbar-nav">
-            {% url 'accueil' as url %}
-            <li class="nav-item {% if request.path == url %}active{% endif %}">
-                <a class="nav-link " style="color: #f6ddff" href="{{ url }}">Accueil</a>
-            </li>
-                    {% url 'configuration' as url %}
-            <li class="nav-item {% if request.path == url %}active{% endif %}">
-                <a class="nav-link" style="color: #f6ddff" href="{{ url }}"> Configuration</a>
-            </li>
-            {% url 'lst_projets' as url %}
-            <li class="nav-item {% if request.path == url %}active{% endif %}">
-                <a class="nav-link " style="color: #f6ddff" href="{{ url }}">Perfos0D</a>
-            </li>
-            <li class="nav-item dropdown {% if request.path == util_url or request.path == config_url %}active{% endif %}">
-                {% url 'utilitaire' as util_url %}
-                <a class="nav-link dropdown-toggle" href="#"
-                   id="navbarDropdownUtilitaire" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    Utilitaire
-                </a>
-            <ul class="dropdown-menu custom-dropdown" aria-labelledby="navbarDropdownUtilitaire">
-                {% url 'lst_revue_veine' as url %}
-                <li class="nav-item {% if request.path == url %}active{% endif %}">
-                    <a class="nav-link" href="{{ url }}">Revue Veine</a>
-                </li>
-                {% url 'lst_revue_aube' as url %}
-                <li class="nav-item {% if request.path == url %}active{% endif %}">
-                    <a class="nav-link" href="{{ url }}">Revue Aube</a>
-                </li>
-                {% url 'utilitaire_y_to_yplus' as url %}
-                <li class="nav-item {% if request.path == url %}active{% endif %}">
-                    <a class="nav-link" href="{{ url }}">Y to Y+</a>
-                </li>
-                {% url 'split_pdf' as url %}
-                <li class="nav-item {% if request.path == url %}active{% endif %}">
-                    <a class="nav-link" href="{{ url }}">Split PDF</a>
-                </li>
-                {% url 'lst_projets_shenron' as url %}
-                <li class="nav-item {% if request.path == url %}active{% endif %}">
-                    <a class="nav-link" href="{{ url }}">ShenRON</a>
-                </li>
+   <a class="navbar-brand" href="#" style="padding-left:10px">TRUNKS</a>
+   <button class="navbar-toggler" type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav">
+   <span class="navbar-toggler-icon"></span>
+   </button>
+<div class="collapse navbar-collapse justify-content-center"
+     id="navbarNav"
+     style="margin-right:-300px; position:relative; z-index:1;">
+
+      <ul class="navbar-nav">
+         {% url 'accueil' as url %}
+         <li class="nav-item {% if request.path == url %}active{% endif %}">
+            <a class="nav-link" href="{{ url }}">Accueil</a>
+         </li>
+         {% url 'configuration' as url %}
+         <li class="nav-item {% if request.path == url %}active{% endif %}">
+            <a class="nav-link" href="{{ url }}">Configuration</a>
+         </li>
+         {% url 'lst_projets' as url %}
+         <li class="nav-item {% if request.path == url %}active{% endif %}">
+            <a class="nav-link" href="{{ url }}">Perfos0D</a>
+         </li>
+         <li class="nav-item dropdown">
+            {% url 'utilitaire' as util_url %}
+            <a class="nav-link dropdown-toggle"
+               href="#"
+               id="navbarDropdownUtilitaire"
+               data-bs-toggle="dropdown">
+            Utilitaire
+            </a>
+            <ul class="dropdown-menu custom-dropdown">
+               {% url 'lst_revue_veine' as url %}
+               <li><a class="nav-link" href="{{ url }}">Revue Veine</a></li>
+               {% url 'lst_revue_aube' as url %}
+               <li><a class="nav-link" href="{{ url }}">Revue Aube</a></li>
+               {% url 'utilitaire_y_to_yplus' as url %}
+               <li><a class="nav-link" href="{{ url }}">Y+ to Y</a></li>
+               {% url 'split_pdf' as url %}
+               <li><a class="nav-link" href="{{ url }}">Split PDF</a></li>
+               {% url 'lst_projets_shenron' as url %}
+               <li><a class="nav-link" href="{{ url }}">ShenRON</a></li>
             </ul>
-            {% url 'explorer' as url %}
-            <li class="nav-item {% if request.path == url %}active{% endif %}">
-                <a class="nav-link" style="color: #f6ddff" href="{{ url }}"> Explorer</a>
-            </li>
-        </ul>
-    </div>
-<div class="d-flex align-items-center gap-2">
-    <!-- Barre de recherche -->
-    <form action="{% url 'recherche_globale' %}" method="get" class="d-flex" role="search">
-        <input class="form-control me-2" type="search" name="q" placeholder="Rechercher..." value="{{ request.GET.q|default:'' }}">
-        <button class="btn btn-outline-light" type="submit" title="Rechercher">
-            <i class="bi bi-search"></i>
-        </button>
-    </form>
+         </li>
+         {% url 'explorer' as url %}
+         <li class="nav-item {% if request.path == url %}active{% endif %}">
+            <a class="nav-link" href="{{ url }}">Explorer</a>
+         </li>
+      </ul>
+   </div>
+<div class="d-flex align-items-center gap-2" style="position:relative; z-index:10;">
+    <form action="{% url 'recherche_globale' %}" method="get" class="d-flex">
+            <input
+                class="form-control me-2"
+                type="search"
+                name="q"
+                placeholder="Rechercher..."
+                value="{{ request.GET.q|default:'' }}"
+            >
+        
+            <button
+                type="submit"
+                class="btn btn-outline-light"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                title="Rechercher dans TRUNKS"
+            >
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
 
-    <!-- Lien vers la documentation -->
-    <a href="https://devlab-dev.snm.snecma/public/capsulecore/trunks/trunks/"
-       class="btn btn-outline-light" target="_blank" rel="noopener noreferrer" title="Documentation Trunks">
-        <i class="bi bi-book"></i>
-    </a>
-
-    <!-- Bouton de déconnexion -->
-    {% if user.is_authenticated %}
-    <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-light" title="Se déconnecter">
-            <i class="bi bi-box-arrow-right"></i>
-        </button>
-    </form>
-    {% endif %}
-
-
-</div>
+      <a href="https://devlab-dev.snm.snecma/public/capsulecore/trunks/trunks/"
+         class="btn btn-outline-light"
+         target="_blank"
+         rel="noopener noreferrer"
+         data-bs-toggle="tooltip"
+         data-bs-placement="top"
+         title="Documentation">
+      <i class="bi bi-book"></i>
+      </a>
+      <a  href="https://safrangroup-my.sharepoint.com/:x:/r/personal/stephane_faure_safrangroup_com/Documents/%5BTRUNKS%5D%20Gestion%20Repertoire.xlsx?d=w5ac79278a7974f8485f1a17ab9fabefc&csf=1&web=1&e=av89ts"
+         class="btn btn-outline-light"
+         target="_blank"
+         rel="noopener noreferrer"
+         data-bs-toggle="tooltip"
+         data-bs-placement="top"
+         title="Demande accès data">
+      <i class="bi bi-folder2-open"></i>
+      </a>
+        <a href="{% url 'stats_view' %}" class="btn btn-outline-light" data-bs-toggle="tooltip" title="Statistiques">
+            <i class="bi bi-graph-up"></i>
+        </a>
+        <a href="{% url 'news_view' %}"
+           class="btn btn-outline-light"
+           data-bs-toggle="tooltip"
+           title="News & Versions">
+            <i class="bi bi-megaphone"></i>
+        </a>
+       {% if user.is_authenticated %}
+      <form action="{% url 'logout' %}" method="post">
+         {% csrf_token %}
+         <button class="btn btn-outline-light"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Déconnexion">
+         <i class="bi bi-box-arrow-right"></i>
+         </button>
+      </form>
+      {% endif %}
+   </div>
 </nav>
 
-<body style="background-image: url('{% static 'img/back3.jpg' %}'); ">
+<!-- MAIN -->
+<main class="container">
 
-<main class="container" >
-    {% block content %}
-    {% endblock %}
+{#    <div class="text-center mb-4">#}
+{#        <div class="border border-danger rounded p-3 mt-3" style="background:#ffe6e6;">#}
+{#            <p class="m-0 fw-bold text-danger">#}
+{#                ⚠️ Ne pas utiliser pour de vraies études aérodynamiques.<br>#}
+{#                SIMU dédiée aux phases de test IHM / ergonomie / validation calcul.#}
+{#            </p>#}
+{#        </div>#}
+{#    </div>#}
+    
+{% if not request.user|has_valid_user_directory %}
+    <div class="text-center mb-4">
+        <div class="border border-danger rounded p-3 mt-3" style="background:#ffe6e6;">
+            <p class="m-0 fw-bold text-danger">
+            ⚠️ Le répertoire de travail n’est pas accessible<br>
+            <small class="text-muted">Veuillez l’ajouter ou le modifier dans les Configurations</small>
+                <br>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
 </main>
+
+<!-- TOAST STACK -->
+<div id="toast-stack" class="toast-stack"></div>
+
+<!-- TOAST SYSTEM (GLOBAL) -->
+<script>
+function closeToast(toast) {
+    toast.classList.add("toast-hide");
+    setTimeout(() => toast.remove(), 260);
+}
+
+function addToast(type, message, ttlMs) {
+    if (!message) return;
+
+    const stack = document.getElementById("toast-stack");
+    const toast = document.createElement("div");
+
+    const headers = {
+        error:  "Erreur",
+        info:   "Information",
+        copie:  "Copier dans le presse-papier",
+        genere: "Fichiers générés"
+    };
+
+    toast.className = "toast-item toast-" + type;
+    toast.innerHTML = `
+        <div class="toast-head">
+            <span>${headers[type] || "Information"}</span>
+            <button class="toast-close">×</button>
+        </div>
+        <div class="toast-body"></div>
+    `;
+
+    toast.querySelector(".toast-body").textContent = message;
+    toast.querySelector(".toast-close").onclick = () => closeToast(toast);
+
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("toast-show"));
+
+    setTimeout(() => closeToast(toast), ttlMs || (type === "error" ? 9000 : 6000));
+}
+
+    
+/* Helper global pour AJAX */
+function toastFromData(data, defaultType) {
+    if (!data || !data.message) return;
+    const level = data.level || defaultType || "info";
+    addToast(level === "error" ? "error" : "info", data.message);
+}
+</script>
+
+<script>
+function copyToClipboard(text) {
+    // Copie dans le presse-papier
+    navigator.clipboard.writeText(text).then(function() {
+        addToast("copie", text);
+    }, function() {
+        addToast("error", "Erreur lors de la copie !");
+    });
+}
+
+</script>
+
+<!-- DJANGO MESSAGES -->
+{% if messages %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% for message in messages %}
+        (function () {
+            let ttl = null;
+
+            {% for tag in message.tags.split %}
+                {% if tag|slice:":4" == "ttl:" %}
+                    ttl = parseInt("{{ tag|slice:"4:" }}");
+                {% endif %}
+            {% endfor %}
+
+            {% if 'error' in message.tags %}
+                addToast("error", "{{ message|escapejs }}", ttl || 9000);
+            {% else %}
+                addToast("info", "{{ message|escapejs }}", ttl || 7000);
+            {% endif %}
+        })();
+    {% endfor %}
+});
+</script>
+{% endif %}
+
+{#    Autofocus Modal#}
+<script>
+function setupAutofocus(modalId) {
+    var modal = document.getElementById(modalId);
+
+    if (!modal) return;
+
+    // Empêche d'ajouter plusieurs fois le listener
+    modal.addEventListener("shown.bs.modal", function () {
+        var field = document.getElementById("id_name");
+        if (field) {
+            field.focus();
+            field.select();
+        }
+    }, { once: true }); // exécuté une seule fois
+}
+</script>
+
+
+
+<!-- BOKEH -->
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.8.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.8.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.8.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.8.0.min.js"></script>
 
 </body>
 
-
-<!--Bockeh-->
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.1.0.min.js"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.1.0.min.js"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.1.0.min.js"></script>
-<script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.1.0.min.js"></script>
 
 </html>

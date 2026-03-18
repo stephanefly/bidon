@@ -8,7 +8,7 @@ asgiref==3.8.1
     # via django
 beautifulsoup4==4.12.3
     # via django-bootstrap-v5
-bokeh==3.1.0
+bokeh==3.8.0
     # via trunks (pyproject.toml)
 chardet==5.2.0
     # via reportlab
@@ -44,7 +44,6 @@ kiwisolver==1.4.8
     # via matplotlib
 ldap3==2.9.1
     # via
-    #   safranae-django-login
     #   safranae-ldap-gateway
     #   trunks (pyproject.toml)
 markupsafe==3.0.2
@@ -53,6 +52,8 @@ matplotlib==3.10.0
     # via
     #   safranae-bsamreader
     #   trunks (pyproject.toml)
+narwhals==2.14.0
+    # via bokeh
 numpy==2.2.1
     # via
     #   bokeh
@@ -99,9 +100,9 @@ pyyaml==6.0.2
     #   trunks (pyproject.toml)
 reportlab==4.3.0
     # via trunks (pyproject.toml)
-safranae-bsamreader==0.4.1
+safranae-bsamreader==0.5.1
     # via trunks (pyproject.toml)
-safranae-django-login[ldap]==0.6.1
+safranae-django-login[ldap]==0.9.0
     # via trunks (pyproject.toml)
 safranae-ldap-gateway==0.6.1
     # via safranae-django-login
@@ -125,3 +126,10 @@ xlrd==2.0.2
     # via trunks (pyproject.toml)
 xyzservices==2024.9.0
     # via bokeh
+# Dépendances tests / CI
+pytest==8.4.2
+pytest-django==4.11.1
+pytest-cov==7.0.0
+pytest-mock==3.15.0
+pylnk3==0.4.3
+

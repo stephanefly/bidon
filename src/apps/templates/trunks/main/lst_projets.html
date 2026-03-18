@@ -1,4 +1,7 @@
 {% extends 'trunks/main/base.html' %}
+{% load path_filters %}
+{% load permissions_tags %}
+
 {% block content %}
     <div class="text-center mb-4">
     <h2 class="fw-bold">Liste de <span class="text-primary">vos Projets</span></h2>
@@ -6,24 +9,14 @@
 </div>
     <br>
     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-            data-bs-target="#createProjectModal">
+            data-bs-target="#createProjectModal" onclick='setupAutofocus("createProjectModal")' {% if not request.user|has_valid_user_directory %} disabled {% endif %}>
         Nouveau Projet
     </button>
-    <br>    <br>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-warning">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"
-                        aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    <br>
     <hr>
     <table id="tableprojet" class="table table-bordered table-striped">
         <thead>
         <th>Nom</th>
-        <th>Créé par</th>
         <th>Actions</th>
         </thead>
         <tbody>
@@ -32,7 +25,6 @@
                 {% url 'lst_projets' as url %}
                 <td><a href="{{ url }}/{{ projet.id }}">{{ projet.name }}</a>
                 </td>
-                <td>{{ projet.created_by }}</td>
                 <td>
                                         <a data-bs-toggle="modal"
                        data-bs-target="#renameProjetModal-{{ projet.id }}"

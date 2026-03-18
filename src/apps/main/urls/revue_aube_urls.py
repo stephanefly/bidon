@@ -1,11 +1,21 @@
 from django.urls import path
 
-from apps.main.views import (lst_revue_aube, info_revue_aube,
-                             delete_revue_aube, rename_revue_aube, aube_create,
-                             aube_update, aube_delete, aube_duplicate,
-                             launch_revue_aube, active_aube, afficher_code_dico,
-                             telecharger_code_dico, changer_dico)
-
+from apps.main.views import (
+                             active_aube,
+                             afficher_code_dico,
+                             aube_create,
+                             aube_delete,
+                             aube_duplicate,
+                             aube_update,
+                             changer_dico,
+                             delete_revue_aube,
+                             info_revue_aube,
+                             launch_revue_aube,
+                             lst_revue_aube,
+                             rename_revue_aube,
+                             telecharger_code_dico,
+                             duplicate_revue_aube,
+)
 
 urlpatterns = [
     path("lst_revue_aube", lst_revue_aube, name="lst_revue_aube"),
@@ -22,5 +32,6 @@ urlpatterns = [
     path('afficher_code_dico/<int:pk>/', afficher_code_dico,name='afficher_code_dico'),
     path('telecharger_dico/<int:pk>/', telecharger_code_dico,name='telecharger_code_dico'),
     path('changer_dico/<int:pk>/', changer_dico, name='changer_dico'),
+    path("lst_revue_aube/duplicate/<int:revue_aube_id>/", duplicate_revue_aube, name="duplicate_revue_aube"),
 
 ]

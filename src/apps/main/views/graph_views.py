@@ -1,65 +1,69 @@
 import os.path
 from datetime import datetime
-
-from django.http import FileResponse, Http404, JsonResponse
-from django.urls import reverse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods
+from config.settings.base import PATH_STYLE
 from django.conf import settings
-
-from apps.main.models import Cas, Etat, IsoVitesse
-from apps.main.modules.genepi.create_file_genepi import (
-    create_genepi_bat_file,
+from django.http import FileResponse, Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
+from apps.main.models import Cas, Etat, RevueVeine
+from apps.main.modules.genepi.create_genepi_from_perfo0D import (
     create_genepi_file,
 )
-from apps.main.modules.trace_conv.trace_conv import launch_trace_conv
+from apps.main.modules.gestion_projets.tools import create_bat_shortcut_windows, create_bat_shortcut_linux
+from pathlib import Path
 from apps.main.modules.graph_perfo_0d.main_process import process_graph_perfo_0d
+from apps.main.modules.trace_conv.trace_conv import launch_trace_conv
+from apps.main.utils.stats import inc_views_stat
 
+import time
 
 def graph_perfo_0d(request, etat_id):
+
     data = {}
     etat = get_object_or_404(Etat, id=etat_id)
+
     cache_path = etat.get_cache_filepath()
+    t2 = time.perf_counter()
 
     # if not os.path.exists(cache_path):
-    print("CALCULATING DATA")
-    data = process_graph_perfo_0d(etat, data, cache_path)
+    # data = process_graph_perfo_0d(etat, data, cache_path)
 
     # else:
-    #     print("LECTURE CACHE FILE")
-    #     with open(cache_path, "r", encoding="utf-8") as f:
-    #         data_json = json.load(f)
-    #         data.update(data_json)
+    # with open(cache_path, "r", encoding="utf-8") as f:
+    # data_json = json.load(f)
+    # data.update(data_json)
 
-    # print(data)
-    # 5. FINALISATION
+    data = process_graph_perfo_0d(etat, data, cache_path)
+    t3 = time.perf_counter()
+
     data["etat"] = etat
     data["projet"] = etat.projet
-    data["selected_cases"] = Cas.objects.filter(iso_vitesse__etat=etat, select=True)
+    data["plan_amont"] = etat.plan_amont_selected
+    data["plan_aval"] = etat.plan_aval_selected
+    data["selected_cases"] = Cas.objects.filter(
+        iso_vitesse__etat=etat,
+        select=True
+    )
+    t4 = time.perf_counter()
 
-    return render(request, "trunks/main/graph_perfo0d.html", data)
+    inc_views_stat("graph_perfo_0d", request.user)
+
+    response = render(request, "trunks/main/graph_perfo0d.html", data)
+    t6 = time.perf_counter()
+
+    print("------ TIMING graph_perfo_0d ------")
+    print("process_graph:", round(t3 - t2, 3), "s")
+    print("finalisation:", round(t4 - t3, 3), "s")
+    print("TOTAL:", round(t6 - t2, 3), "s")
+    print("------------------------------------")
+
+    return response
+
 
 
 @require_http_methods(["POST"])
-def download_graph(request, etat_id):
-    etat = get_object_or_404(Etat, id=etat_id)
-
-    html_filepath = os.path.join(etat.work_directory, f"{settings.PERFOS0D_EXPORT_NAME}.html")
-
-    current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    new_filename = f"Perfos0D_{etat.projet.name}_{etat.name}_{current_date}.html"
-    if os.path.exists(html_filepath):
-        return FileResponse(
-            open(html_filepath, "rb"),
-            as_attachment=True,
-            filename=new_filename,
-        )
-    else:
-        raise Http404("Fichier introuvable")
-
-
-@require_http_methods(["POST"])
-def action1(request, etat_id):
+def launch_genepi_auto_from_perfo(request, etat_id):
     etat = get_object_or_404(Etat, id=etat_id)
 
     lst_cas_selected = Cas.objects.filter(select=True, iso_vitesse__etat=etat_id)
@@ -84,31 +88,26 @@ def action1(request, etat_id):
                         'Secondaire': parse_field(
                             request.POST.get('secondaire_aubes', '')),
                     }}
-    print(param_genepi)
-    try:
-        if not os.path.exists(os.path.join(etat.work_directory, 'GenepiAuto')):
-            os.makedirs(os.path.join(etat.work_directory, 'GenepiAuto'))
 
-        create_genepi_file(etat, lst_cas_selected, param_genepi)
-        create_genepi_bat_file(etat.work_directory, request)
+    genepi_auto_dir = Path(etat.work_directory) / "GenepiAuto"
+    genepi_auto_dir.mkdir(parents=True, exist_ok=True)
+    os.chmod(genepi_auto_dir, 0o777)
 
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': 'Fichier GENEPI créé avec succès',
-                'redirect_url': reverse('graph_perfo_0d', kwargs={'etat_id': etat.id})  # Optionnel
-            })
+    create_genepi_file(etat, lst_cas_selected, param_genepi)
+    if PATH_STYLE == "windows":
+        create_bat_shortcut_windows(etat, request.user)
+    else:
+        create_bat_shortcut_linux(etat, request.user)
 
-        return redirect("graph_perfo_0d", etat_id=etat.id)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'message': 'Fichier GENEPI créé avec succès',
+            'redirect_url': reverse('graph_perfo_0d', kwargs={'etat_id': etat.id})  # Optionnel
+        })
 
-    except Exception as e:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': f'Erreur lors de la création du fichier GENEPI: {str(e)}'
-            })
-
-        return redirect("graph_perfo_0d", etat_id=etat.id)
+    inc_views_stat("launch_genepi_auto_from_perfo", request.user)
+    return redirect("graph_perfo_0d", etat_id=etat.id)
 
 
 @require_http_methods(["POST"])
@@ -117,34 +116,35 @@ def trace_conv(request, etat_id):
     etat = get_object_or_404(Etat, id=etat_id)
     lst_cas_selected = Cas.objects.filter(select=True, iso_vitesse__etat=etat_id)
 
+    messages = []
+
     for case in lst_cas_selected:
-        launch_trace_conv(etat, case)
+        ok = launch_trace_conv(etat, case)
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-                'success': True,
-                'message': 'PDF de convergence généré avec succès',
-                'redirect_url': reverse('graph_perfo_0d', kwargs={'etat_id': etat.id})
-            })
+        if ok:
+            msg = f"{case.name} : PDF TraceConv généré"
+        else:
+            msg = f"{case.name} : Erreur lors de la génération"
 
-    return redirect("graph_perfo_0d", etat_id=etat.id)
+        messages.append({
+            "ok": ok,
+            "message": msg,
+        })
 
+    inc_views_stat("trace_conv", request.user)
+    return JsonResponse({
+        "messages": messages,
+    })
 
 
 @require_http_methods(["GET"])
-def create_revue_veine(request, etat_id):
+def affichage_modal_create_revue_veine_from_perfo0D(request, etat_id):
     if request.headers.get('x-requested-with') != 'XMLHttpRequest':
         return HttpResponseBadRequest("Invalid request")
 
-    etat = get_object_or_404(Etat, id=etat_id)
-    lst_cas_etat = Cas.objects.filter(iso_vitesse__etat=etat)
-    lst_revue_veine = list(
-        {case.revue_veine for case in lst_cas_etat if case.revue_veine})
-    lst_cas_selected = []  # Ajouter ceci pour éviter l'erreur
+    lst_revue_veine = RevueVeine.objects.filter(created_by=request.user)
 
     return render(request, 'trunks/partials/_modal_revue_veine.html', {
         'lst_revue_veine': lst_revue_veine,
         'etat_id': etat_id,
-        'lst_cas_selected': lst_cas_selected,
     })
-

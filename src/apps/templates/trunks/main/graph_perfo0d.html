@@ -1,7 +1,14 @@
     {% extends 'trunks/main/base.html' %}
+    {% load path_filters %}
     {% block content %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+[data-root-id] {
+    all: unset !important;
+    display: block !important;
+    width: 100% !important;
+}
+</style>
 
     <!-- Styles boutons -->
     <style>
@@ -10,11 +17,23 @@
     .btn-danger { background-color: #dc3545; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; }
     .btn-danger:hover { background-color: #c82333; }
     .graph-row { margin-bottom: 10px; }
-    .legend-container { display: flex; align-items: center; background-color: white; border-color: #0a0a0a }
+    .titre-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0;
+    text-align: center;
+}
+    .legend-container { display: flex; align-items: center; border-color: #0a0a0a }
     .legend-item { display: flex; align-items: center; margin-right: 10px; }
     .legend-color { width: 15px; height: 15px; margin-right: 5px; display: inline-block; }
     .btn-bleu-nuit {background-color: #032155; color: #ffffff; border: #031633 solid 2px;}
     .btn-bleu-nuit:hover, .btn-bleu-nuit:focus {background-color: #093c85; color: #ffffff; border-color: #022047;}
+    #selected-cases li {
+        display: inline-flex;
+        white-space: nowrap;
+        align-items: center;
+    }
     </style>
 
     <!-- Breadcrumb -->
@@ -27,9 +46,11 @@
        </ol>
     </nav>
 
-    <h2 style="text-align: center;">Graphique Performance 0D</h2>
-    <br>
-
+        <h2 style="text-align:center; margin-bottom:8px;">
+            Performance 0D
+        </h2>
+        
+<br>
     <!-- Onglets -->
     <ul class="nav nav-pills mb-3 d-flex justify-content-center" id="pills-tab" role="tablist">
        {% for tab in tabs %}
@@ -54,6 +75,7 @@
           <form method="POST">{% csrf_token %}
              <div class="aaa" id="graph-container-{{ tab.id }}">
                 <div class="row graph-row" id="graph-{{ tab.id }}-1">
+                   <div class="titre-container">{{ tab.titre_plan_html|safe }}</div>
                    <div class="legend-container">{{ tab.legend_html|safe }}</div>
                    {{ tab.div|safe }}
                    {{ tab.script|safe }}
@@ -101,39 +123,35 @@
 
                 <!-- Revue Bsam -->
                 <div class="col">
-                    <button id="btn-create_revue_veine"
-                            type="button"
-                            class="btn btn-bleu-nuit action-btn"
-                            style="border: #031633 solid 2px;"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Créer une revue veine avec le Bsam du Cas"
-                            data-url="{% url 'create_revue_veine' etat.id %}">
-                        Revue Veine
-                    </button>
+<button id="btn-create_revue_veine"
+        type="button"
+        class="btn btn-bleu-nuit"
+        style="border: #031633 solid 2px;"
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+        title="Créer une revue veine avec le Bsam du Cas"
+        data-url="{% url 'affichage_modal_create_revue_veine_from_perfo0D' etat.id %}">
+    Revue Veine
+</button>
+
                 </div>
 
                 <!-- Répertoire -->
                <div class="col">
-                    <div id="workDir" style="display: none;">{{ etat.work_directory }}</div>
+                    <div id="workDir" style="display: none;">{{ etat.work_directory|os_path }}</div>
                                 <!-- Copier Repertoire de travail -->
-<button onclick="copyToClipboard('{{ etat.work_directory|escapejs }}')" 
-        class="btn btn-primary"
-        style="border-width: 2px; padding: 8px 14px; font-weight: 500;">
-    
-    <i class="bi bi-folder"></i> 
-    <span>Dossier de travail</span>
-
-</button>
+                <button onclick="copyToClipboard('{{ etat.work_directory|os_path }}')"
+                        class="btn btn-primary"
+                        style="border-width: 2px; padding: 8px 14px; font-weight: 500;">
+                    <i class="bi bi-folder"></i> 
+                    <span>Dossier de travail</span>
+                </button>
+                
+                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
+                    Contient les exports HTML et Excel.
                 </div>
-
-                <!-- Télécharger Graphs -->
-                <div class="col">
-                   <form method="POST" action="{% url 'download_graph' etat.id %}">{% csrf_token %}
-                      <button type="submit" class="btn btn-success" style="border: #031633 solid 2px;">
-                          Export Perfos0D</button>
-                   </form>
                 </div>
+                 
              </div>
           </div>
        </div>
@@ -142,7 +160,7 @@
     <!-- Modale GENEPI -->
     <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form method="POST" action="{% url 'action1' etat.id %}" class="needs-validation" novalidate>
+        <form method="POST" action="{% url 'launch_genepi_auto_from_perfo' etat.id %}" class="needs-validation" novalidate>
           {% csrf_token %}
           <div class="modal-content shadow rounded-4">
             <!-- Header -->
@@ -186,9 +204,9 @@
 
               <!-- Chemin script -->
               <div class="mb-4">
-                <label for="mise_en_forme" class="form-label fw-semibold">Chemin vers le fichier de mise en forme de la présentation (GenepiAuto_Dico.py)</label>
+                <label for="mise_en_forme" class="form-label fw-semibold">Chemin vers le fichier de mise en forme de la présentation (GENEPIAuto_Dico_Default.py)</label>
                 <input type="text" class="form-control card border shadow-sm rounded-2 " id="mise_en_forme" name="mise_en_forme"
-                  value="\\nas23\YRKC\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\03_Postprocessing\TRUNKS\codes\GenepiAuto\GENEPIAuto_Dico.py"
+                  value="apps/main/modules/genepi/FILES/GENEPIAuto_Dico_Default.py"
                   required>
               </div>
 
@@ -198,7 +216,7 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label for="total_aubes" class="form-label">* Flux Total</label>
-                    <input type="text" class="form-control" id="total_aubes" name="total_aubes" value="RM1" placeholder="Ex: RM1">
+                    <input type="text" class="form-control" id="total_aubes" name="total_aubes" placeholder="Ex: RM1">
                   </div>
                   <div class="col-md-4">
                     <label for="primaire_aubes" class="form-label">* Flux Primaire</label>
@@ -272,250 +290,297 @@
 
 
 <script>
-function copyToClipboard(text) {
-    // Copie dans le presse-papier
-    navigator.clipboard.writeText(text).then(function() {
-        afficherNotif2("Copié dans le presse-papier : " + text);
-    }, function() {
-        afficherNotif2("Erreur lors de la copie !");
-    });
-}
+   // actions_buttons.js
+   document.addEventListener("DOMContentLoaded", function () {
+       let selectedCases = [];
+   
+       const updateSelectedCases = () => {
+           const hidden = document.getElementById("selected-cases-hidden");
+           if (hidden && hidden.value) {
+               try {
+                   selectedCases = JSON.parse(hidden.value);
+               } catch (e) {
+                   selectedCases = [];
+               }
+           } else {
+               selectedCases = [];
+           }
+       };
+   
+       document.querySelectorAll(".action-btn").forEach(btn => {
+           btn.addEventListener("click", function (e) {
+               updateSelectedCases();
+   
+               if (selectedCases.length === 0) {
+                   e.preventDefault();
+                   const selectionModal = new bootstrap.Modal(document.getElementById('selectionRequiredModal'));
+                   selectionModal.show();
+                   return;
+               }
+   
+               const action = this.dataset.action;
+   
+               if (action === "genepi") {
+                   e.preventDefault();
+                   const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                   modal.show();
+                   return;
+               }
+   
+               if (action === "convauto") {
+                   e.preventDefault();
+                   const form = document.getElementById('btn-convauto-form');
+                   const formData = new FormData(form);
+   
+                   fetch(form.action, {
+                       method: form.method,
+                       body: formData,
+                       headers: {
+                           'X-Requested-With': 'XMLHttpRequest',
+                           'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+                       }
+                   })
+                    .then(resp => resp.json())
+                    .then(data => {
+                        data.messages.forEach(item => {
+                            if (item.ok) {
+                                addToast("genere", item.message);
+                            } else {
+                                addToast("error", item.message);
+                            }
+                        });
+                    })
+                    .catch(() => {
+                        addToast("error", "Erreur de communication avec le serveur.");
+                    });
 
-function afficherNotif2(message) {
-    let notif = document.getElementById('custom-notif');
-    if (!notif) {
-        notif = document.createElement('div');
-        notif.id = 'custom-notif';
-        notif.style.position = 'fixed';
-        notif.style.top = '20px';
-        notif.style.right = '20px';
-        notif.style.minWidth = '250px';
-        notif.style.zIndex = 99999;
-        notif.style.padding = '16px 18px';
-        notif.style.borderRadius = '12px';
-        notif.style.fontSize = '1rem';
-        notif.style.color = '#fff';
-        notif.style.fontWeight = "bold";
-        notif.style.background = "#471448";
-        notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
-        document.body.appendChild(notif);
-    }
-    notif.innerHTML = message;
-    notif.style.display = 'block';
-    
-    // Disparition auto après 2,5 secondes
-    setTimeout(function() {
-        notif.style.display = "none";
-    }, 2500);
-}
+               }
+
+           });
+       });
+   });
+   
+</script>
+<script>// genepi_submit.js
+   document.addEventListener("DOMContentLoaded", function () {
+   
+       const updateSelectedCases = () => {
+           const hidden = document.getElementById("selected-cases-hidden");
+           if (hidden && hidden.value) {
+               try {
+                   return JSON.parse(hidden.value);
+               } catch (e) {
+                   return [];
+               }
+           }
+           return [];
+       };
+   
+       const formGenepi = document.querySelector('#confirmationModal form');
+       if (!formGenepi) return;
+   
+       formGenepi.addEventListener('submit', function(e) {
+           e.preventDefault();
+   
+           const selectedCases = updateSelectedCases();
+           const submitBtn = formGenepi.querySelector('button[type="submit"]');
+           const originalHTML = submitBtn.innerHTML;
+   
+           submitBtn.disabled = true;
+           submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération en cours...';
+   
+           const formData = new FormData(formGenepi);
+           formData.set('cases_ids', JSON.stringify(selectedCases));
+   
+           fetch(formGenepi.action, {
+               method: 'POST',
+               body: formData,
+               headers: {
+                   'X-Requested-With': 'XMLHttpRequest',
+                   'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
+               }
+           })
+           .then(response => response.json())
+           .then(data => {
+               if (data.success) {
+                   bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
+                   addToast("genere", "Fichier GENEPIAUTO généré");
+               } else {
+                   alert('Erreur : ' + (data.error || 'Une erreur est survenue'));
+               }
+           })
+           .catch(() => {
+               alert('Erreur de communication avec le serveur');
+           })
+           .finally(() => {
+               submitBtn.disabled = false;
+               submitBtn.innerHTML = originalHTML;
+           });
+       });
+   });
 </script>
 <script>
-// Logique pour actions sur les boutons (GENEPI, ConvAuto, etc.)
-document.addEventListener("DOMContentLoaded", function () {
-    let selectedCases = [];
+document.addEventListener('DOMContentLoaded', function () {
 
-    // MAJ sélection cas depuis input caché
-    const updateSelectedCases = () => {
+    const btn = document.getElementById('btn-create_revue_veine');
+    if (!btn) return;
+
+    function getSelectedCases() {
         const hidden = document.getElementById("selected-cases-hidden");
-        if (hidden && hidden.value) {
-            try {
-                selectedCases = JSON.parse(hidden.value);
-            } catch (e) {
-                selectedCases = [];
-            }
-        } else {
-            selectedCases = [];
+        if (!hidden || !hidden.value) return [];
+        try {
+            return JSON.parse(hidden.value);
+        } catch (e) {
+            return [];
         }
-    };
-
-    document.querySelectorAll(".action-btn").forEach(btn => {
-        btn.addEventListener("click", function (e) {
-            updateSelectedCases();
-            if (selectedCases.length === 0) {
-                e.preventDefault();
-                const selectionModal = new bootstrap.Modal(document.getElementById('selectionRequiredModal'));
-                selectionModal.show();
-                return;
-            }
-            const action = this.dataset.action;
-            if (action === "genepi") {
-                e.preventDefault();
-                const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-                modal.show();
-            } else if (action === "convauto") {
-                e.preventDefault();
-                const form = document.getElementById('btn-convauto-form');
-                const formData = new FormData(form);
-                fetch(form.action, {
-                    method: form.method,
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || ''
-                    }
-                })
-                .then(resp => resp.json())
-                .then(data => {
-                    if (data.success) {
-                        afficherNotif("Traitement ConvAuto effectué avec succès !", true);
-                    } else {
-                        afficherNotif("Erreur : " + (data.error || "Une erreur est survenue"), false);
-                    }
-                })
-                .catch(error => {
-                    afficherNotif("Erreur de communication avec le serveur.", false);
-                });
-            }
-        });
-    });
-
-    // Notification simple
-    function afficherNotif(message, success) {
-        let notif = document.getElementById('custom-notif');
-        if (!notif) {
-            notif = document.createElement('div');
-            notif.id = 'custom-notif';
-            notif.style.position = 'fixed';
-            notif.style.top = '20px';
-            notif.style.right = '20px';
-            notif.style.minWidth = '250px';
-            notif.style.zIndex = 99999;
-            notif.style.padding = '12px';
-            notif.style.borderRadius = '8px';
-            notif.style.fontSize = '1.1em';
-            notif.style.color = '#fff';
-            document.body.appendChild(notif);
-        }
-        notif.style.background = success ? '#51005a' : '#ffffff';
-        notif.textContent = message;
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none' }, 2000);
     }
 
-    // GENERE: pour GenepiAuto, à la soumission, on ajoute aussi les cas sélectionnés
-    const formGenepi = document.querySelector('#confirmationModal form');
-    if (formGenepi) {
-        formGenepi.addEventListener('submit', function(e) {
+    function getCsrfToken() {
+        const el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : "";
+    }
+
+    function bindRevueVeine() {
+        const form          = document.getElementById('form-new-revue');
+        const submitBtn     = document.getElementById('btn-new-revue');
+        const selectRevue   = document.getElementById('select_revue');
+        const newRevueBlock = document.getElementById('new-revue-name-block');
+        const newRevueInput = document.getElementById('id_name');
+        const errorDiv      = document.getElementById('error-revue');
+
+        if (!form || !submitBtn || !selectRevue || !newRevueBlock || !newRevueInput) return;
+
+        function updateMode() {
+            const creatingNew = (selectRevue.value === "");
+            newRevueBlock.style.display = creatingNew ? "block" : "none";
+            newRevueInput.disabled = !creatingNew;
+            newRevueInput.required = creatingNew;
+
+            if (!creatingNew) {
+                newRevueInput.value = "";
+                if (errorDiv) errorDiv.textContent = "";
+            }
+        }
+
+        selectRevue.onchange = updateMode;
+        updateMode();
+
+        form.onsubmit = function (e) {
             e.preventDefault();
-            updateSelectedCases();
-            const submitBtn = formGenepi.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
+            if (errorDiv) errorDiv.textContent = "";
+
+            if (selectRevue.value === "" && newRevueInput.value.trim() === "") {
+                if (errorDiv) errorDiv.textContent = "Veuillez saisir un nom pour la nouvelle revue.";
+                return;
+            }
+
+            const selectedCases = getSelectedCases();
+
+            const hiddenModal = document.getElementById("selected-cases-hidden-modal");
+            if (hiddenModal) hiddenModal.value = JSON.stringify(selectedCases);
+
+            const formData = new FormData(form);
+            formData.set("cases_ids", JSON.stringify(selectedCases));
+
+            const urlPost = form.dataset.url || form.action;
+            const csrfToken = getCsrfToken();
+            const originalHTML = submitBtn.innerHTML;
+
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération en cours...';
-            const formData = new FormData(formGenepi);
-            formData.set('cases_ids', JSON.stringify(selectedCases));
-            fetch(formGenepi.action, {
-                method: 'POST',
-                body: formData,
+            submitBtn.innerHTML = "Création...";
+
+            fetch(urlPost, {
+                method: "POST",
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData
             })
-            .then(response => response.json())
+            .then(resp => resp.json())
             .then(data => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
+
                 if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
+                    addToast("info", data.message || "Revue associée avec succès.");
+                    const modalEl = document.getElementById('modalRevueVeine');
+                    const inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
                 } else {
-                    alert('Erreur : ' + (data.error || 'Une erreur est survenue'));
+                    if (errorDiv) errorDiv.textContent = data.error || "Erreur inconnue.";
                 }
             })
-            .catch(error => {
-                console.error('Erreur:', error);
-                alert('Erreur de communication avec le serveur');
+            .catch(() => {
+                if (errorDiv) errorDiv.textContent = "Erreur de communication avec le serveur.";
             })
             .finally(() => {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-                afficherNotif("Fichier GENEPIAUTO généré !", true);
+                submitBtn.innerHTML = originalHTML;
             });
-        });
+        };
     }
-});
 
-// Script Revue Veine (modale, création)
-document.addEventListener('DOMContentLoaded', function () {
-    const btn = document.getElementById('btn-create_revue_veine');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-        const url = btn.getAttribute('data-url');
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const selectedCases = getSelectedCases();
+
+        // 🔒 Pas de modale Revue Veine si rien sélectionné
+        if (selectedCases.length === 0) {
+            const selectionModal = new bootstrap.Modal(document.getElementById('selectionRequiredModal'));
+            selectionModal.show();
+            return;
+        }
+
+        const urlBase = btn.getAttribute('data-url');
+        if (!urlBase) {
+            addToast("error", "Action impossible : URL manquante.");
+            return;
+        }
+
+        const casesParam = encodeURIComponent(JSON.stringify(selectedCases));
+        const url = urlBase.includes("?") ? (urlBase + "&cases=" + casesParam) : (urlBase + "?cases=" + casesParam);
+
         fetch(url, {
             method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(resp => {
-            if (!resp.ok) {
-                throw new Error("Erreur HTTP " + resp.status);
-            }
+            if (!resp.ok) throw new Error("Erreur HTTP " + resp.status);
             return resp.text();
         })
         .then(html => {
             const container = document.getElementById('modal-container');
+            if (!container) {
+                addToast("error", "Conteneur de modale introuvable (#modal-container).");
+                return;
+            }
+
             container.innerHTML = html;
+
             const modalEl = document.getElementById('modalRevueVeine');
+            if (!modalEl) {
+                addToast("error", "Modale Revue Veine introuvable dans le HTML retourné.");
+                return;
+            }
+
             const modal = new bootstrap.Modal(modalEl);
             modal.show();
-            setTimeout(() => bindRevueVeineForm(), 50);
+
+            bindRevueVeine();
         })
-        .catch((err) => {
-            console.error("Erreur modale Revue Veine :", err);
-            alert("Erreur de chargement de la modale Revue Veine.");
+        .catch(() => {
+            addToast("error", "Erreur de chargement de la modale Revue Veine.");
         });
     });
 });
-
-function bindRevueVeineForm() {
-    const form = document.getElementById("form-new-revue");
-    const submitBtn = document.getElementById("btn-new-revue");
-    const errorDiv = document.getElementById("error-revue");
-    if (!form || !submitBtn) return;
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        errorDiv.textContent = "";
-        // AJOUT ICI : on envoie la sélection des cas !
-        let selectedCases = [];
-        try {
-            selectedCases = JSON.parse(document.getElementById("selected-cases-hidden").value || "[]");
-        } catch (err) { selectedCases = []; }
-        const formData = new FormData(form);
-        formData.set('cases_ids', JSON.stringify(selectedCases));
-        const urlPost = form.dataset.url;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const etatId = form.querySelector('[name=etat_id]').value;
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = 'Création...';
-        fetch(urlPost, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken,
-                "X-Requested-With": "XMLHttpRequest"
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.redirect_url) {
-                window.location.href = data.redirect_url; // Redirige vers la nouvelle revue
-            } else if (data.success) {
-                afficherNotif("Nouvelle revue créée avec succès.", true);
-            } else {
-                errorDiv.textContent = data.error || "Erreur inconnue.";
-            }
-        })
-        .catch(() => {
-            errorDiv.textContent = "Erreur de communication avec le serveur.";
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-        });
-    });
-}
 </script>
 
-        
+
+
+
 
 {% endblock %}

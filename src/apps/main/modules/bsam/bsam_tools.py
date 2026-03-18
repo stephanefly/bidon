@@ -1,12 +1,18 @@
-import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from bsamreader import ThroughFlow
+import yaml
 from bsamreader.plotting.plot_bsam import plot_bsam
-
+from pathlib import Path
 from apps.main.models import Cas
-from apps.main.modules.gestion_projets.tools import get_symbol_list
+from apps.main.modules.gestion_projets.tools import get_symbol_list, \
+    get_symbol_name_from_code
+from django.conf import settings
+import os
+from datetime import datetime
+from bsamreader import ThroughFlow
+
+from apps.main.utils.paths import get_trace_veine_image_path
 
 
 def make_veine_plot(revue_veine):
@@ -35,16 +41,18 @@ def make_veine_plot(revue_veine):
     ax.set_ylabel("R (m)")
     # ax.set_title("Rayon - " + str(revue_veine.name))
     ax.axis("equal")
+    plt.legend(fontsize=6)
 
     # Sauvegarde et affichage
-    image_path = revue_veine.get_image_path()
+    image_path = get_trace_veine_image_path(revue_veine)
     fig.savefig(image_path, dpi=600)
+    plt.close(fig)
 
     return image_path
 
 
+
 def plot_caracteristics_bsam(cache_cas, carac, hauteurs):
-    print(carac)
 
     y_min_all = None
     y_max_all = None
@@ -54,7 +62,6 @@ def plot_caracteristics_bsam(cache_cas, carac, hauteurs):
 
     all_data = []  # Stocker les données pour l'export Excel
 
-    symbols = get_symbol_list()
     var_name = carac["carac_name"]
 
     for item in cache_cas:
@@ -72,6 +79,7 @@ def plot_caracteristics_bsam(cache_cas, carac, hauteurs):
             y_values = [calculators.calculer_values(var_name)]
             x_values = calculators.calculer_values("xplane")
             x_label = "X [m]"
+            x_lim = None
 
         else:
             calculators = []
@@ -100,6 +108,7 @@ def plot_caracteristics_bsam(cache_cas, carac, hauteurs):
             else:
                 x_values = [0]
             x_label = "Nbe Aube Adim"
+            x_lim = (0, 1)
 
         # Si aucune donnée -> on skip ce cas
         if not y_values:
@@ -113,13 +122,13 @@ def plot_caracteristics_bsam(cache_cas, carac, hauteurs):
 
         # Tracé
         for i, y_data in enumerate(y_values):
-            symbole = symbols[cas.iso_vitesse.marker]["mpl"]
+            symbole = get_symbol_name_from_code(cas.iso_vitesse.marker)
             axs[i].plot(x_values, y_data, marker=symbole, color=cas.iso_vitesse.color)
             axs[i].set_xlabel(x_label)
             axs[i].set_ylabel(var_name)
             if carac["Nb_hauteur_base"] != 1:
                 axs[i].set_title(f"hH={100 * hauteurs[i]}%")
-            axs[i].set_xlim(min(x_values), max(x_values))
+            axs[i].set_xlim(x_lim)
             axs[i].grid(True)
             axs[i].set_ylim(y_min_all - marge, y_max_all + marge)
 
@@ -162,11 +171,54 @@ def echelle_plot(y_values, y_min_all, y_max_all):
     return y_min_all, y_max_all
 
 
-def load_carac_config(nb_graph,
-                      filepath=r"src\apps\main\modules\bsam\carac_config.yaml",):
-    with open(filepath, encoding="utf-8") as file:
-        config = yaml.safe_load(file)
-    for carac in config.get("lst_carac", []):
-        if not carac.get("Nb_hauteur_base"):
-            carac["Nb_hauteur_base"] = nb_graph
-    return config.get("lst_carac", [])
+def get_bsam_kd(case_obj):
+    """
+    KD de la Premiere row de la première zone
+    """
+
+    tf = ThroughFlow.from_bsam(case_obj.bsam_path)
+    # TODO : Rechercher le kd du entry row du global
+    row0 = tf.zones[0].rows[0]
+    kd_bsam = row0.inlet.kd
+
+    return kd_bsam
+
+
+def bsam_file_test(bsam_file_path):
+
+    try:
+        tf = ThroughFlow.from_bsam(bsam_file_path)
+        result_test = "Bsam lisible par Bsam Reader"
+        return True, result_test
+    except:
+        result_test = "Bsam non lisible par Bsam Reader"
+        return False, result_test
+
+
+def get_nb_aube_and_xemp(aube):
+    """
+    Retourne (nb_aubes, xemp) pour une aube donnée à partir du BSAM.
+    xemp est retourné en mm.
+    """
+
+    tf = ThroughFlow.from_bsam(aube.fichier_bsam)
+
+    for zone in tf.zones:
+        for row in zone.rows:
+            if row.name != aube.label_bsam:
+                continue
+
+            # Nb d’aubes
+            nb_aubes = row.z
+
+            # Récupération des données de la station courante
+            section = row.stations[row._istack]
+            data = {
+                feature: getattr(section, feature, None)
+                for feature in getattr(section, "features_1d", [])
+            }
+
+            # Xemp en mm
+            xemp = data["x"][0] * 1000
+
+            return nb_aubes, xemp

@@ -1,7 +1,7 @@
 # apps/main/urls/base_urls.py
-from django.contrib.auth import views as auth_views
-from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
+from django.urls import path
+
 from apps.main.views import (
     accueil,
     configuration_view,
@@ -9,15 +9,15 @@ from apps.main.views import (
     delete_etat,
     delete_projet,
     duplicate_etat,
+    explorer,
     freeze_etat,
     info_etat,
     info_projet,
     lst_projets,
+    recherche_globale,
     rename_etat,
     rename_projet,
-    recherche_globale,
-    explorer,
-    split_pdf,
+    split_pdf, stats_view, news_view
 )
 
 urlpatterns = [
@@ -58,4 +58,11 @@ urlpatterns = [
 
     # Split PDF
     path("tools/split-pdf/", split_pdf, name="split_pdf"),
+
+    #LOGS
+    path("stats/", stats_view, name="stats_view"),
+
+    # NEWS
+    path("news/", news_view, name="news_view"),
 ]
+

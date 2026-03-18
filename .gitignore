@@ -1,24 +1,5 @@
 ### Python template
 # Byte-compiled / optimized / DLL files
-src/static
-# Environnement Python
-venv/
-.env
-
-# Fichiers temporaires / lourds
-*.patch
-*.zip
-*.7z
-*.rar
-*.iso
-*.log
-*.bak
-
-# IDE
-.idea/
-.vscode/
-*.iml
-
 __pycache__/
 *.py[cod]
 *$py.class

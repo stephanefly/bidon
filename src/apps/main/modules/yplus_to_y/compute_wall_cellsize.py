@@ -1,9 +1,8 @@
-import scipy
+
 import numpy as np
-from bsamreader import ThroughFlow, RadialEntropicAverage
-from scipy import optimize
+import scipy
+from bsamreader import ThroughFlow
 from numpy.polynomial import Polynomial
-from pathlib import Path
 
 bsam_filepath = [r"\\Nas23\yrkc\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\04_Chaining\MidFan_Booster\ShenRON\00_Inputs\GTD_M8.47_H_v6p1_70Nn_TOPB_gradOpFan.bsam",
 r"\\Nas23\yrkc\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\04_Chaining\MidFan_Booster\ShenRON\00_Inputs\GTD_M8.47_H_v6p1_70Nn_TOPB_gradOpF.bsam"]

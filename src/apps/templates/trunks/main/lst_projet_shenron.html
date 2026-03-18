@@ -1,13 +1,27 @@
 {% extends 'trunks/main/base.html' %}
 {% load static %}
+{% load path_filters %}
+{% load permissions_tags %}
 {% block content %}
 <div class="text-center mb-4">
    <h2 class="fw-bold">Liste de vos projets <span class="text-primary">ShenRON</span></h2>
    <p class="mt-3">Description de l'outil</p>
 </div>
+        <div class="alert alert-danger">
+  <strong class="fs-5">
+    <i class="bi bi-exclamation-triangle me-2 fs-4"></i> L'utilitaire ShenRON n'est pas encore opérationnel 
+  </strong>
+  <br>
+    Nous vous tiendrons au courant dès qu'il sera disponible
+</div>
+    
 <br>
-<button type="button" class="btn btn-primary" data-bs-toggle="modal"
-   data-bs-target="#createProjetShenronModal">
+{#<button type="button" class="btn btn-primary" data-bs-toggle="modal"#}
+{#   data-bs-target="#createProjetShenronModal" {% if not request.user|has_valid_user_directory %} disabled {% endif %}>#}
+{#Nouveau Projet Shenron#}
+{#</button>#}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+   data-bs-target="#createProjetShenronModal" >
 Nouveau Projet Shenron
 </button>
 <br>
@@ -15,7 +29,6 @@ Nouveau Projet Shenron
 <table id="tableprojetshenron" class="table table-bordered table-striped">
    <thead>
       <th>Nom</th>
-      <th>Créé par</th>
       <th>Créé le</th>
       <th>Dossier de travail</th>
       <th>Actions</th>
@@ -27,12 +40,11 @@ Nouveau Projet Shenron
          <td>
             <a href="{{ url }}{{ projet.id }}">{{ projet.name }}</a>
          </td>
-         <td>{{ projet.created_by }}</td>
          <td>{{ projet.created_at }}</td>
          <td>
 
              <!-- Copier Repertoire de travail -->
-<button onclick="copyToClipboard('{{ projet.work_dir|escapejs }}')" 
+<button onclick="copyToClipboard('{{ projet.work_directory|os_path }}')" 
         class="btn btn-primary"
         style="border-width: 2px; padding: 8px 14px; font-weight: 500;">
     
@@ -135,42 +147,4 @@ Nouveau Projet Shenron
       </div>
    </div>
 </div>
-<script>
-   function copyToClipboard(text) {
-       // Copie dans le presse-papier
-       navigator.clipboard.writeText(text).then(function() {
-           afficherNotif2("Copié dans le presse-papier : " + text);
-       }, function() {
-           afficherNotif2("Erreur lors de la copie !");
-       });
-   }
-   
-   function afficherNotif2(message) {
-       let notif = document.getElementById('custom-notif');
-       if (!notif) {
-           notif = document.createElement('div');
-           notif.id = 'custom-notif';
-           notif.style.position = 'fixed';
-           notif.style.top = '20px';
-           notif.style.right = '20px';
-           notif.style.minWidth = '250px';
-           notif.style.zIndex = 99999;
-           notif.style.padding = '16px 18px';
-           notif.style.borderRadius = '12px';
-           notif.style.fontSize = '1rem';
-           notif.style.color = '#fff';
-           notif.style.fontWeight = "bold";
-           notif.style.background = "#471448";
-           notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
-           document.body.appendChild(notif);
-       }
-       notif.innerHTML = message;
-       notif.style.display = 'block';
-   
-       // Disparition auto après 2,5 secondes
-       setTimeout(function() {
-           notif.style.display = "none";
-       }, 2500);
-   }
-</script>
 {% endblock %}

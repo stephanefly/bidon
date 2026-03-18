@@ -1,8 +1,7 @@
 import json
-from os.path import basename
+
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.main.models import Cas, Etat

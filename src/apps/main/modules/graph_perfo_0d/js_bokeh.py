@@ -1,5 +1,5 @@
 from bokeh.models import CustomJS, Select, TapTool
-
+from config.settings.base import PATH_STYLE
 # Store debounce timer outside the callback to avoid overlapping calls
 FETCH_DEBOUNCE = "var debounceTimer = null;"
 
@@ -28,7 +28,6 @@ def click_copie(p, source):
 
 
 def callback_selection(source, scatter, etat_id):
-    # Personnalisation de la sélection
     scatter.selection_glyph = scatter.glyph.clone()
     scatter.selection_glyph.line_width = 8
     scatter.selection_glyph.line_color = "black"
@@ -36,10 +35,24 @@ def callback_selection(source, scatter, etat_id):
     scatter.nonselection_glyph = scatter.glyph.clone()
     scatter.nonselection_glyph.fill_alpha = 0.4
 
+    # Base URL selon ton déploiement
+    if PATH_STYLE == "windows":
+        save_url_base = "/save_selection/"
+    else:
+        save_url_base = "/trunks/save_selection/"
+
     callback = CustomJS(
-        args=dict(source=source, etat_id=etat_id),
+        args=dict(source=source, etat_id=etat_id, save_url_base=save_url_base),
         code=FETCH_DEBOUNCE + """
-        console.log("etat_id:", etat_id);  // debug JS
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return "";
+        }
+
+        console.log("etat_id:", etat_id);
+
         if (debounceTimer) {
             clearTimeout(debounceTimer);
         }
@@ -62,11 +75,9 @@ def callback_selection(source, scatter, etat_id):
                 ul.innerHTML = "";
                 selected_cases.forEach(function(cas) {
                     var li = document.createElement('li');
-                    li.textContent = cas.trim();
+                    li.textContent = (cas || "").trim();
                     ul.appendChild(li);
                 });
-            } else {
-                console.warn("Élément avec l'ID 'selected-cases' non trouvé dans le DOM.");
             }
 
             var hidden_ids = document.getElementById('selected-cases-hidden');
@@ -78,25 +89,34 @@ def callback_selection(source, scatter, etat_id):
                 hidden_names.value = JSON.stringify(selected_cases);
             }
 
-            fetch('/save_selection/' + etat_id + '/', {
+            const csrfToken = getCookie("csrftoken");
+            const url = window.location.origin + save_url_base + etat_id + '/';
+
+            fetch(url, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
                     selected_cases: selected_cases,
-                    selected_cases_id: selected_cases_id,
+                    selected_cases_id: selected_cases_id
                 })
             }).then(function(response) {
-                if (!response.ok) {
-                    console.error("Erreur d'enregistrement :", response.status);
-                } else {
-                    console.log("Données enregistrées avec succès.");
-                }
+                console.log("HTTP status:", response.status);
+                return response.text().then(function(txt) {
+                    if (!response.ok) {
+                        console.error("Erreur d'enregistrement:", response.status, txt);
+                    } else {
+                        console.log("Données enregistrées avec succès:", txt);
+                    }
+                });
             }).catch(function(err) {
                 console.error("Erreur réseau :", err);
             });
-        }, 200); // délai de 200ms
+
+        }, 200);
         """
     )
 

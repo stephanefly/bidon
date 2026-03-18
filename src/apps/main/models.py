@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-from apps.main.modules.gestion_projets.tools import get_user_path
-from datetime import datetime
 
-from django.utils.timezone import now
 from django.conf import settings
-from django.db import models
-from django.db.models.deletion import CASCADE
 from django.contrib.auth.models import User
+from django.db import models, transaction
+from django.db.models.deletion import CASCADE
+from django.utils.timezone import now
+from django.contrib import messages
+
 
 class UtilitaireConfiguration(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -17,53 +17,214 @@ class UtilitaireConfiguration(models.Model):
     carma_path = models.CharField(max_length=255, blank=True, null=True)
     ensight_path = models.CharField(max_length=255, blank=True, null=True)
     genepi_auto_path = models.CharField(max_length=255, blank=True, null=True)
+    user_directory = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         app_label = 'main'
+
 
 class RevueVeine(models.Model):
     name = models.CharField(max_length=100)
     created_by = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    directory = models.CharField(max_length=255, blank=True, null=True)
+    work_directory = models.CharField(max_length=255, blank=True, null=True)
 
+    def rename(self, new_name):
+        """
+        Renomme la revue + le dossier associé
+        """
+        old_dir = self.work_directory
+        new_dir = os.path.join(
+            os.path.dirname(old_dir),
+            "RevueVeine",
+            new_name
+        )
 
-    def get_image_path(self):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"TraceVeine_{self.name}_{timestamp}.jpg"  # Extension à adapter si besoin
-        return os.path.join(self.directory, filename)
+        # Sécurité
+        if os.path.exists(new_dir):
+            return False
 
+        with transaction.atomic():
+            # 1) Renommage dossier physique
+            if old_dir and os.path.isdir(old_dir):
+                os.rename(old_dir, new_dir)
+
+            # 2) MAJ DB
+            self.name = new_name
+            self.work_directory = new_dir
+            self.save()
+            return True
 
 class ProjetShenron(models.Model):
     name = models.CharField(max_length=100)
     created_by = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    work_dir= models.CharField(max_length=255, blank=True)
+    work_directory= models.CharField(max_length=255, blank=True)
+    # -------------------------
+    # 1) PARAMÈTRES DU CAS
+    # -------------------------
+    case_name = models.CharField(max_length=255)
+    case_path = models.CharField(max_length=1000, blank=True)
+    bsam_file = models.CharField(max_length=1000, blank=True)
+
+    # -------------------------
+    # 2) CONFIGURATION
+    # -------------------------
+    CANNELLE_TEMPLATE_CHOICES = [
+        ("CO8P-ARTEMIS-MXCR", "CO8P – ARTEMIS – MXCR"),
+        ("GENERIC", "Generic"),
+    ]
+
+    cannelle_template = models.CharField(
+        max_length=100,
+        choices=CANNELLE_TEMPLATE_CHOICES,
+        default="CO8P-ARTEMIS-MXCR"
+    )
+    cannelle_input = models.CharField(max_length=1000, blank=True)
+    xml_path = models.CharField(max_length=1000, blank=True)
+
+    plan_inlet_outlet_auto = models.BooleanField(default=False)
+    plan_inlet = models.CharField(max_length=50, blank=True)
+    plan_outlet = models.CharField(max_length=50, blank=True)
+    plan_outlet_secondary = models.CharField(max_length=50, blank=True)
+
+    bec_xr_file = models.CharField(max_length=1000, blank=True)
+
+    # Table dynamique "Aubes à changer"
+    # Stockée sous forme de liste JSON
+    blades_data = models.JSONField(default=list, blank=True)
+
+    # -------------------------
+    # 3) MAILLAGE
+    # -------------------------
+    mesh_input = models.CharField(max_length=1000, blank=True)
+    batch_mode = models.BooleanField(default=False)
+
+    # -------------------------
+    # 4) PARAMÈTRES NUMÉRIQUES
+    # -------------------------
+    BC_TYPE_CHOICES = [
+        ("Outpres", "Outpres"),
+        ("StaticPressure", "Static Pressure"),
+        ("Massflow", "Massflow"),
+    ]
+
+    accel_multi = models.CharField(
+        max_length=50,
+        choices=BC_TYPE_CHOICES,
+        default="Outpres"
+    )
+    condition_limite = models.BooleanField(default=False)
+    bc_out_type = models.CharField(
+        max_length=50,
+        choices=BC_TYPE_CHOICES,
+        default="Outpres"
+    )
+    rafal_cas = models.BooleanField(default=False)
+
+    # -------------------------
+    # 5) PARAMÈTRES EXTRACTION
+    # -------------------------
+    post_script = models.CharField(max_length=1000, blank=True)
+    visu_enable = models.BooleanField(default=False)
+    visu_script = models.CharField(max_length=1000, blank=True)
+
+    # -------------------------
+    # 6) PARAMÈTRES CO-PROCESSING
+    # -------------------------
+    TARGET_PARAM_CHOICES = [
+        ("qcorr_ref", "Qcorr_ref"),
+        ("massflow", "Massflow"),
+        ("efficiency", "Efficiency"),
+    ]
+
+    PERF_PLAN_CHOICES = [
+        ("Inlet", "Inlet"),
+        ("Outlet", "Outlet"),
+    ]
+
+    conv_stop = models.BooleanField(default=False)
+    grid_label = models.CharField(max_length=255, blank=True)
+    target_param = models.CharField(
+        max_length=50,
+        choices=TARGET_PARAM_CHOICES,
+        default="qcorr_ref"
+    )
+    perf_up = models.CharField(
+        max_length=20,
+        choices=PERF_PLAN_CHOICES,
+        default="Inlet"
+    )
+    perf_down = models.CharField(
+        max_length=20,
+        choices=PERF_PLAN_CHOICES,
+        default="Outlet"
+    )
+    copro_script = models.CharField(max_length=1000, blank=True)
+    copro_enable = models.BooleanField(default=False)
+    copro_user = models.CharField(max_length=255, blank=True)
+
+    # -------------------------
+    # 7) PARAMÈTRES CALCUL
+    # -------------------------
+    PLATFORM_CHOICES = [
+        ("XANTHE", "XANTHE"),
+        ("LOCAL", "LOCAL"),
+        ("SLURM", "SLURM"),
+    ]
+
+    ELSA_VERSION_CHOICES = [
+        ("v5.2.03", "v5.2.03"),
+        ("v5.2.02", "v5.2.02"),
+    ]
+
+    iter_case = models.PositiveIntegerField(default=3000)
+    platform = models.CharField(
+        max_length=20,
+        choices=PLATFORM_CHOICES,
+        default="XANTHE"
+    )
+    nprocs = models.PositiveIntegerField(default=28)
+    elsa_version = models.CharField(
+        max_length=20,
+        choices=ELSA_VERSION_CHOICES,
+        default="v5.2.03"
+    )
+    submit_calc = models.BooleanField(default=True)
+
+    # -------------------------
+    # META
+    # -------------------------
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.case_name
 
 class RevueAube(models.Model):
     name = models.CharField(max_length=100)
     created_by = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    work_dir= models.CharField(max_length=255, blank=True)
+    work_directory= models.CharField(max_length=255, blank=True)
     dico_genepi_auto = models.CharField(
         max_length=255,
-        default="apps/main/modules/genepi/GENEPIAuto_Dico - TRUNKS - Defaut .py"
+        default="apps/main/modules/genepi/FILES/GENEPIAuto_Dico_Default.py"
     )
     # TODO: grille
 
 class Aube(models.Model):
 
     color = models.CharField(max_length=255, null=False, blank=True, default="black")
-    projet = models.CharField(max_length=100, blank=True, default="CME3")
-    version = models.CharField(max_length=100, blank=True, default="S1")
-    aube = models.CharField(max_length=100, blank=True, default="S1AB")
-    type_coupe_nbre_ldc = models.CharField(max_length=50, blank=True, default="CQ")
-    coupe_dessin = models.CharField(max_length=200, blank=True, default="1,11,15,19,29")
-    label_bsam = models.CharField(max_length=50, blank=True, default="S1")
+    projet = models.CharField(max_length=100, blank=True)
+    version = models.CharField(max_length=100, blank=True)
+    aube = models.CharField(max_length=100, blank=True)
+    type_coupe_nbre_ldc = models.CharField(max_length=50, blank=True)
+    coupe_dessin = models.CharField(max_length=200, blank=True)
+    label_bsam = models.CharField(max_length=50, blank=True)
     inversion_aube = models.BooleanField(default=False)
     fichier_bsam = models.CharField(max_length=255, blank=True)
     inversion_bsam = models.BooleanField(default=False)
-    calage_deg = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    calage_deg = models.DecimalField(max_digits=6, decimal_places=2)
     titre_cas = models.CharField(max_length=100, blank=True)
     lien_xml = models.CharField(max_length=255, blank=True)
     revue_aube = models.ForeignKey(
@@ -90,7 +251,7 @@ class Project(models.Model):
         return self.name
 
     def rename_project(self, new_name):
-        new_path = os.path.join(get_user_path(self), new_name)
+        new_path = os.path.join(os.path.dirname(self.work_directory), new_name)
         os.rename(self.work_directory, new_path)
         self.name = new_name
         self.work_directory = new_path
@@ -98,6 +259,19 @@ class Project(models.Model):
 
 
 class Etat(models.Model):
+
+    DEFAULT_CONFIGURATIONS = [
+        {"x_axis": "Qcorr_ref", "y_axis": "Pi"},
+        {"x_axis": "Cd/Etapol", "y_axis": "Pi"},
+        {"x_axis": "Qcorr", "y_axis": "Pi"},
+        {"x_axis": "Qcorr_ref", "y_axis": "Cd/Etapol"},
+        {"x_axis": "Cd/Etapol", "y_axis": "PisQcorr_ref"},
+        {"x_axis": "Qcorr", "y_axis": "Cd/Etapol"},
+        {"x_axis": "Tau", "y_axis": "Cd/Etapol"},
+        {"x_axis": "Cd/Etapol", "y_axis": "Tau"},
+        {"x_axis": "Tau", "y_axis": "Cd/Etapol"},
+    ]
+
     name = models.CharField(max_length=100)
     projet = models.ForeignKey(
         Project, on_delete=models.SET_NULL, null=True, blank=True
@@ -110,6 +284,11 @@ class Etat(models.Model):
     work_directory = models.CharField(max_length=255)
     cas_temp_repertory = models.CharField(max_length=255, blank=True, null=True)
     bsam_temp_repertory = models.CharField(max_length=255, blank=True, null=True)
+    graph_configuration = models.JSONField(default=DEFAULT_CONFIGURATIONS, blank=True)
+    plan_amont = models.JSONField(default=list, blank=True)
+    plan_aval = models.JSONField(default=list, blank=True)
+    plan_amont_selected = models.CharField(max_length=255, default="Inlet")
+    plan_aval_selected = models.CharField(max_length=255, default="Outlet")
 
     def __str__(self):
         return self.name
@@ -119,18 +298,38 @@ class Etat(models.Model):
         self.work_directory = new_path
         self.save()
 
-    def rename_etat(self, new_name):
-        new_path = os.path.join(self.projet.work_directory, new_name)
-        os.rename(self.work_directory, new_path)
-        self.name = new_name
-        self.work_directory = new_path
-        self.save()
+    def rename(self, new_name):
+        """
+        Renomme la revue + le dossier associé
+        """
+        old_dir = self.work_directory
+        new_dir = os.path.join(
+            os.path.dirname(old_dir),
+            "Perfo_0D",
+            self.projet.name,
+            new_name
+        )
+
+        # Sécurité
+        if os.path.exists(new_dir):
+            return False
+
+        with transaction.atomic():
+            # 1) Renommage dossier physique
+            if old_dir and os.path.isdir(old_dir):
+                os.rename(old_dir, new_dir)
+
+            # 2) MAJ DB
+            self.name = new_name
+            self.work_directory = new_dir
+            self.save()
+            return True
 
     def get_cache_filepath(self):
         timestamp = self.updated_at.strftime("%Y%m%d%H%M%S")
         filename = f"cache-data-etat{timestamp}.json"
-        if not os.path.exists(os.path.join(self.work_directory, "data-cache")):
-            os.makedirs(os.path.join(self.work_directory, "data-cache"))
+        data_cache_dir = Path(self.work_directory) / "data-cache"
+        data_cache_dir.mkdir(parents=True, exist_ok=True)
         return os.path.join(self.work_directory, "data-cache" ,filename)
 
     def clean_old_cache_files(self):
@@ -145,7 +344,7 @@ class Etat(models.Model):
 
 
 class IsoVitesse(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     color = models.CharField(max_length=255, default="black")
     etat = models.ForeignKey(Etat, on_delete=CASCADE, null=True, blank=True)
     FILE_TYPE = [
@@ -166,7 +365,19 @@ class IsoVitesse(models.Model):
     ]
     marker = models.CharField(max_length=255, choices=MARKERS, default="circle")
     row_config = models.JSONField(default=dict)
-    recalage_kd = models.FloatField(null=True, blank=True, default=1)
+    recalage_kd = models.CharField(
+        max_length=20,
+        default="1"
+    )
+    recalage_kd_mode = models.CharField(
+        max_length=10,
+        choices=[
+            ("non", "Non"),
+            ("auto", "Auto"),
+            ("oui", "Oui"),
+        ],
+        default="non"
+    )
 
     def __str__(self):
         return self.name
@@ -188,6 +399,7 @@ class IsoVitesse(models.Model):
         return {name: idx + 1 for idx, name in enumerate(
             self.get_lst_row_config())}
 
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.etat:
@@ -204,7 +416,7 @@ class IsoVitesse(models.Model):
 
 
 class Cas(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     available = models.BooleanField(default=True)
     used = models.BooleanField(default=True)
     calculate_perfo = models.BooleanField(default=False)
@@ -223,6 +435,8 @@ class Cas(models.Model):
     obj_type = models.CharField(max_length=20, choices=OBJ_TYPE_CHOICES, default="cas_cannelle")
     row_metadata = models.JSONField(default=dict, blank=True)
     revue_veine = models.ForeignKey(RevueVeine, on_delete=models.CASCADE, null=True, blank=True)
+    moyenne_type = models.CharField(max_length=255, null=True, blank=True)
+    recalage_kd = models.FloatField(default=1)
 
     def __str__(self):
         return f"{self.name} ({self.obj_type})"
@@ -243,36 +457,45 @@ class Cas(models.Model):
         elif self.obj_type == "bsam" and self.iso_vitesse:
             self.repertory = self.iso_vitesse.etat.bsam_temp_repertory
 
-    def get_hdf5_path(self):
-        hdf5_path = os.path.join(
-            self.repertory,
-            settings.HDF5_PATH,
-        )
+    def get_hdf5_path(self, request):
+        hdf5_path = os.path.join(self.repertory, settings.HDF5_PATH)
 
-        if os.path.exists(hdf5_path):
+        if os.path.isfile(hdf5_path):
             self.file_path = hdf5_path
             self.available = True
-        self.save()
+            self.save()
+            return True
 
-    def get_excel_path(self):
-        # Liste des fichiers possibles dans l'ordre de priorité
-        candidates = [
+        messages.error(request,
+                       f"{self.name} : fichier HDF5 introuvable",
+                        extra_tags="ttl:10000",
+                        )
+        self.delete()
+        return False
+
+    def get_excel_path(self, request):
+        paths = [
             settings.EXCEL_POST_ANNA_PATH_10,
-            settings.EXCEL_POST_ANNA_PATH_7,
             settings.EXCEL_POST_ANTARES_PATH_10,
+            settings.EXCEL_POST_ANNA_PATH_7,
             settings.EXCEL_POST_ANTARES_PATH_7,
         ]
 
-        # Recherche du premier fichier existant
-        self.available = False
-        for filename in candidates:
-            path = os.path.join(self.repertory, filename)
-            if os.path.exists(path):
-                self.file_path = path
-                self.available = True
-                break
+        for path in paths:
+            excel_path = os.path.join(self.repertory, path)
 
-        self.save()
+            if os.path.isfile(excel_path):
+                self.file_path = excel_path
+                self.available = True
+                self.save()
+                return True
+
+        messages.error(request,
+                       f"{self.name} : fichier Excel introuvable",
+                       extra_tags="ttl:10000",
+                       )
+        self.delete()
+        return False
 
     def get_bsam_file(self):
         if self.obj_type == "cas_cannelle":
@@ -339,13 +562,23 @@ class RowPair(models.Model):
         return self.PisQcorr_ref
 
     def is_only_stator(self):
-        if self.entry_row.omega != 0.0 or self.exit_row.omega != 0.0:
+        if self.entry_row.omega != 0.0 or self.exit_row.omega != 0.0 or self.entry_row.name != self.exit_row.name:
             return False
         else:
-            # To handle cases like RDE-RD8
-            if self.entry_row.name != self.exit_row.name:
-                return False
-            else:
-                return True
+            return True
 
 
+class Stat(models.Model):
+    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f"{self.name} - {self.created_at}"
+
+    @classmethod
+    def total_by_name(cls, name):
+        """
+        Retourne le nombre total d'événements pour un name donné
+        """
+        return cls.objects.filter(name=name).count()

@@ -1,8 +1,10 @@
 {% extends 'trunks/main/base.html' %}
+{% load path_filters %}
+
 {% load static %}
 {% block content %}
     <h1>{{ filename }}</h1>
-    <p><i>{{ path }}</i></p>
+    <p><i>{{ path|os_path }}</i></p>
     <div style="background-color: white">
     <pre><code class="language-python">{{ code }}</code></pre>
     </div>

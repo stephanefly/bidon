@@ -1,34 +1,47 @@
 import math
+
+import numpy as np
+import pandas as pd
 from bsamreader import ThroughFlow
 from bsamreader.average import RadialEntropicAverage
-import pandas as pd
-import numpy as np
 
 from apps.main.models import Cas, RowPair
-from apps.main.modules.graph_perfo_0d.gestion_data import \
-    get_row_from_bsam, get_row_from_antares_card, load_bdd_data, add_cas_info, \
-    set_inlet_outlet_row_obj, set_type_of_rowpair, load_hdf_data, get_value_from_df_hdf, \
-    get_sheet_name_from_rowpair
-from apps.main.modules.graph_perfo_0d.get_config_from_row import define_config_list
+from apps.main.modules.bsam.bsam_tools import get_bsam_kd
+from apps.main.modules.graph_perfo_0d.gestion_data import (
+    get_row_from_antares_card,
+    get_row_from_bsam,
+    get_sheet_name_from_rowpair,
+    get_value_from_df_hdf,
+    load_bdd_data,
+    load_hdf_data,
+    set_inlet_outlet_row_obj,
+    set_type_of_rowpair,
+)
+from apps.main.modules.graph_perfo_0d.utils import define_config_list
 
 pd.set_option("display.max_columns", None)
 
 def apply_recalage_kd(case_obj, perfos_data):
 
     kd = case_obj.iso_vitesse.recalage_kd
-    if kd is not None:
-        if perfos_data.get('Qcorr') is not None:
-            perfos_data['Qcorr'] = kd * perfos_data['Qcorr']
-        if perfos_data.get('Qcorr_ref') is not None:
-            perfos_data['Qcorr_ref'] = kd * perfos_data['Qcorr_ref']
-        if perfos_data.get('PisQcorr_ref') is not None:
-            perfos_data['PisQcorr_ref'] = perfos_data['PisQcorr_ref'] / kd
+    if kd == "AUTO":
+        kd_bsam = get_bsam_kd(case_obj)
+        perfos_data['Qcorr'] = kd_bsam * perfos_data['Qcorr']
+        perfos_data['Qcorr_ref'] = kd_bsam * perfos_data['Qcorr_ref']
+        perfos_data['PisQcorr_ref'] = perfos_data['PisQcorr_ref'] / kd_bsam
+        perfos_data["kd"] = kd_bsam
+        case_obj.recalage_kd = kd_bsam
+        case_obj.save()
     else:
-        # TODO: Prendre le KD de la première roue (exemple)
-        # kd_bsam = get_bsam_kd(case_obj)  # À implémenter
-        # perfos_data['Qcorr'] = kd_bsam * perfos_data['Qcorr']
-        # perfos_data['Qcorr_ref'] = kd_bsam * perfos_data['Qcorr_ref']
-        pass
+        if perfos_data.get('Qcorr') is not None:
+            perfos_data['Qcorr'] = float(kd) * perfos_data['Qcorr']
+        if perfos_data.get('Qcorr_ref') is not None:
+            perfos_data['Qcorr_ref'] = float(kd) * perfos_data['Qcorr_ref']
+        if perfos_data.get('PisQcorr_ref') is not None:
+            perfos_data['PisQcorr_ref'] = perfos_data['PisQcorr_ref'] / float(kd)
+        perfos_data["kd"] = float(kd)
+        case_obj.recalage_kd = kd
+        case_obj.save()
     return perfos_data
 
 def set_rowpair_val(rowpair_obj, data):
@@ -218,7 +231,6 @@ def update_perfo_data(perfo_data, stator_only):
         perfo_data['Etapol'] = 0
     else:
         perfo_data['Cd'] = 0
-    print(f" stator_only = {stator_only} --> {perfo_data['Etapol']}")
     return perfo_data
 
 def compute_perfo(aero_data):
@@ -310,9 +322,7 @@ def compute_perfo_excel(cas, rowpair_obj):
 
     return perfo_data
 
-def compute_perfo_hdf(cas, rowpair_obj):
-
-    df = load_hdf_data(cas)
+def compute_perfo_hdf(cas, rowpair_obj, plane_dict):
 
     pair_row_name_split = rowpair_obj.name.split("-")
     if len(pair_row_name_split) == 1:
@@ -320,38 +330,91 @@ def compute_perfo_hdf(cas, rowpair_obj):
     else:
         row_amont, row_aval = pair_row_name_split[0], pair_row_name_split[1]
 
-    aero_data = {
-        'gamma1': df[df['BSAM_Name'] == row_amont]['gamma'].unique()[0],
-        'gamma2': df[df['BSAM_Name'] == row_aval]['gamma'].unique()[0],
-        'r_gas': df[df['BSAM_Name'] == row_amont]['r_gaz'].unique()[0],
-        'q1_moy': get_value_from_df_hdf(df, row_amont, 'Inlet', 'Q'),
-        'q2_moy': get_value_from_df_hdf(df, row_aval, 'Outlet', 'Q'),
-        'ps1_moy': get_value_from_df_hdf(df, row_amont, 'Inlet', 'Ps'),
-        'ps2_moy': get_value_from_df_hdf(df, row_aval, 'Outlet', 'Ps'),
-        'tta1_moy': get_value_from_df_hdf(df, row_amont, 'Inlet', 'Tta'),
-        'tta2_moy': get_value_from_df_hdf(df, row_aval, 'Outlet', 'Tta'),
-        'pta1_moy': get_value_from_df_hdf(df, row_amont, 'Inlet', 'Pta'),
-        'pta2_moy': get_value_from_df_hdf(df, row_aval, 'Outlet', 'Pta'),
-        'ptr1_moy': get_value_from_df_hdf(df, row_amont, 'Inlet', 'Ptr'),
-        'ptr2_moy': get_value_from_df_hdf(df, row_aval, 'Outlet', 'Ptr')
-        }
+    df, row_list, plane_dict = load_hdf_data(cas, rowpair_obj.name, plane_dict)
 
-    perfo_data = compute_perfo(aero_data)
+    lst_amont = []
+    lst_aval = []
+    for plane in df["Plane_Name"].drop_duplicates():
+        if "-" in plane or "Inlet" in plane or "BA" in plane:
+            lst_amont.append(plane)
+        if "+" in plane or "Outlet" in plane or "BF" in plane:
+            lst_aval.append(plane)
 
-    perfo_data = update_perfo_data(perfo_data, rowpair_obj.is_only_stator())
+    aero_data, plane_amont, plane_aval = get_aero_data(row_amont, row_aval, lst_amont, lst_aval, df)
+    if aero_data:
+        perfo_data = compute_perfo(aero_data)
 
-    set_rowpair_val(rowpair_obj, perfo_data)
+        perfo_data = update_perfo_data(perfo_data, rowpair_obj.is_only_stator())
 
-    set_type_of_rowpair(rowpair_obj, "")
+        set_rowpair_val(rowpair_obj, perfo_data)
 
-    return perfo_data
+        set_type_of_rowpair(rowpair_obj, "")
+
+        return perfo_data, plane_dict
+
+    else:
+        return {}
+
+def get_first_value(df, bsam_name, col):
+        vals = df[df['BSAM_Name'] == bsam_name][col].dropna().unique()
+        if len(vals) == 0:
+            return None
+        return vals[0]
+
+
+def get_aero_data(row_amont, row_aval, lst_amont, lst_aval, df):
+
+        gamma1 = get_first_value(df, row_amont, 'gamma')
+        gamma2 = get_first_value(df, row_aval, 'gamma')
+        r_gas = get_first_value(df, row_amont, 'r_gaz')
+
+        # si une info de base manque, inutile de continuer
+        if gamma1 is None or gamma2 is None or r_gas is None:
+            return None
+
+        for plane_amont in lst_amont:
+            for plane_aval in lst_aval:
+
+                aero_data = {
+                    'gamma1': gamma1,
+                    'gamma2': gamma2,
+                    'r_gas': r_gas,
+                    'q1_moy': get_value_from_df_hdf(df, row_amont, plane_amont,
+                                                    'Q'),
+                    'q2_moy': get_value_from_df_hdf(df, row_aval, plane_aval,
+                                                    'Q'),
+                    'ps1_moy': get_value_from_df_hdf(df, row_amont, plane_amont,
+                                                     'Ps'),
+                    'ps2_moy': get_value_from_df_hdf(df, row_aval, plane_aval,
+                                                     'Ps'),
+                    'tta1_moy': get_value_from_df_hdf(df, row_amont,
+                                                      plane_amont, 'Tta'),
+                    'tta2_moy': get_value_from_df_hdf(df, row_aval, plane_aval,
+                                                      'Tta'),
+                    'pta1_moy': get_value_from_df_hdf(df, row_amont,
+                                                      plane_amont, 'Pta'),
+                    'pta2_moy': get_value_from_df_hdf(df, row_aval, plane_aval,
+                                                      'Pta'),
+                    'ptr1_moy': get_value_from_df_hdf(df, row_amont,
+                                                      plane_amont, 'Ptr'),
+                    'ptr2_moy': get_value_from_df_hdf(df, row_aval, plane_aval,
+                                                      'Ptr')
+                }
+
+                # Critère “valide” : ici q1_moy ET q2_moy existent
+                if aero_data["q1_moy"] is not None and aero_data[
+                    "q2_moy"] is not None:
+                    return aero_data, plane_amont, plane_aval
+
+        return None
+
 
 def process_data(data_cache, iso_vitesse):
 
     case_obj_list = Cas.objects.filter(iso_vitesse=iso_vitesse, used=True)
+    plane_dict = {}
 
     for case_obj in case_obj_list:
-        print(f" * On traite le cas suivant --> {case_obj.name}")
         if iso_vitesse.file_type == "excel" or iso_vitesse.file_type == "hdf":
             row_obj_list = get_row_from_antares_card(case_obj)
             iso_vitesse.row_config = define_config_list(row_obj_list)
@@ -364,10 +427,16 @@ def process_data(data_cache, iso_vitesse):
 
     for rowpair_label in iso_vitesse.get_lst_row_config():
         data_cache.setdefault(rowpair_label, {})
-        print(f"     * On traite le rowpair suivant --> {rowpair_label}")
+        plane_dict.setdefault(rowpair_label, {})
 
+        plane_dict_cas = {}
+        perfos_data = {}
         for case_obj in case_obj_list:
+            plane_dict_cas[case_obj.id] = {}
+            plane_dict[rowpair_label] = plane_dict_cas
+
             if not case_obj.calculate_perfo:
+
                 rowpair_obj, _ = RowPair.objects.get_or_create(
                     name=rowpair_label,
                     cas=case_obj,
@@ -384,47 +453,81 @@ def process_data(data_cache, iso_vitesse):
                     perfos_data = compute_perfo_bsam(tf, rowpair_obj)
 
                 elif iso_vitesse.file_type == "excel":
-                    print("Excel")
                     perfos_data = compute_perfo_excel(case_obj, rowpair_obj)
 
                 elif iso_vitesse.file_type == "hdf":
-                    perfos_data = compute_perfo_hdf(case_obj, rowpair_obj)
+                    perfos_data, plane_dict = compute_perfo_hdf(case_obj, rowpair_obj, plane_dict)
 
-                else:
-                    print(f" Type de donnée inconnu --> {iso_vitesse.file_type} !!!")
-                    return data_cache
-
-                perfos_data = apply_recalage_kd(case_obj, perfos_data)
-
-                perfos_data["element_color"] = case_obj.iso_vitesse.color
-                perfos_data["group"] = case_obj.iso_vitesse.name
-                perfos_data["id"] = case_obj.id
-                perfos_data["KD"] = case_obj.iso_vitesse.recalage_kd
-                perfos_data["name"] = case_obj.name
-                perfos_data["marker"] = case_obj.iso_vitesse.marker
-                perfos_data["data_type"] = case_obj.iso_vitesse.file_type
-                df = pd.DataFrame([perfos_data])
-
-                # print(f"({iso_vitesse.name} calculate_perfo) rowpair_obj.is_only_stator() = {rowpair_obj.is_only_stator()}")
-                df['is_only_stator'] = rowpair_obj.is_only_stator()
-
+                df = add_cas_info(perfos_data, case_obj, rowpair_obj)
                 data_cache.setdefault(rowpair_obj.name, {})[case_obj.id] = df
 
             else:
-
-                print(case_obj, rowpair_label)
                 data, rowpair_obj = load_bdd_data(case_obj, rowpair_label)
-
-                data = apply_recalage_kd(case_obj, data)
-                df = pd.DataFrame([data])
-                df = add_cas_info(df, case_obj)
-                print(f"({iso_vitesse.name} BDD) rowpair_obj.is_only_stator() = {rowpair_obj.is_only_stator()}")
-                df['is_only_stator'] = rowpair_obj.is_only_stator()
+                df = add_cas_info(data, case_obj, rowpair_obj=rowpair_obj)
                 data_cache[rowpair_obj.name][case_obj.id] = df
 
     for case_obj in case_obj_list:
-        if not case_obj.calculate_perfo:
+        if not case_obj.iso_vitesse.file_type == "hdf":
             case_obj.calculate_perfo = True
             case_obj.save()
 
-    return data_cache
+    def complete_rowpair_dict(d):
+        for pair_key in list(d.keys()):
+            if not isinstance(pair_key, str):
+                continue
+            if "-" not in pair_key:
+                continue
+
+            inlet, outlet = pair_key.split("-", 1)
+
+            if inlet not in d or outlet not in d:
+                continue
+
+            # Pour chaque temps présent dans la paire
+            for t in d[pair_key]:
+                if t not in d[inlet] or t not in d[outlet]:
+                    continue
+
+                left_list = d[inlet][t]
+                right_list = d[outlet][t]
+
+                if isinstance(left_list, list) and isinstance(right_list, list):
+                    if len(left_list) >= 1 and len(right_list) >= 2:
+                        d[pair_key][t] = [left_list[0], right_list[1]]
+        return d
+
+    plane_dict = complete_rowpair_dict(plane_dict)
+
+    def fill_empty_with_default(d, default_value):
+        for key in d:
+            for t in d[key]:
+                if d[key][t] == {}:
+                    d[key][t] = default_value.copy()
+        return d
+
+    plane_dict = fill_empty_with_default(plane_dict, ['Inlet', 'Outlet'])
+
+    return data_cache, plane_dict
+
+def add_cas_info(data, cas_inner, rowpair_obj=None):
+
+    data = apply_recalage_kd(cas_inner, data)
+    df = pd.DataFrame([data])
+
+    # Enrichissement pour affichage
+    df["element_color"] = cas_inner.iso_vitesse.color
+    df["group"] = cas_inner.iso_vitesse.name
+    df["name"] = cas_inner.name
+    df["id"] = cas_inner.id
+    df["selected"] = cas_inner.select
+    df["marker"] = cas_inner.iso_vitesse.marker
+    df["fill_alpha"] = df["selected"].apply(lambda x: 8 if x else 1)
+    df["line_width"] = df["selected"].apply(lambda x: 8 if x else 1)
+    df["moyenne_type"] = cas_inner.moyenne_type
+    df["data_type"] = cas_inner.iso_vitesse.file_type
+
+    if rowpair_obj is not None:
+        df['is_only_stator'] = rowpair_obj.is_only_stator()
+    else:
+        df['is_only_stator'] = False
+    return df

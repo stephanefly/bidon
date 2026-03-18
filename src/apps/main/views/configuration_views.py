@@ -1,9 +1,9 @@
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+from django.contrib import messages
 from apps.main.forms import ConfigurationForm
 from apps.main.models import UtilitaireConfiguration
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
 
 
 @login_required
@@ -14,6 +14,7 @@ def configuration_view(request):
         form = ConfigurationForm(request.POST, instance=config)
         if form.is_valid():
             form.save()
+            messages.info(request, "Configuration enregistré !")
             return redirect('configuration')
     else:
         form = ConfigurationForm(instance=config)

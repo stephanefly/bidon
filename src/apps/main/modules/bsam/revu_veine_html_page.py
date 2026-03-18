@@ -1,8 +1,8 @@
 
-from pathlib import Path
-from io import BytesIO
-from datetime import datetime
 import base64
+from datetime import datetime
+from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 from bsamreader import ThroughFlow
@@ -262,7 +262,7 @@ def layout_data(all_data, carac, all_excel_data):
         .reset_index()
     )
     # Nom d’onglet (31 char max)
-    sheet_name = carac["carac_name"][:31]
+    sheet_name = f"{carac['carac_name']}_{carac['row_type']}"[:31]
 
     # Stockage dans le dict final
     all_excel_data[sheet_name] = df_final
@@ -270,20 +270,18 @@ def layout_data(all_data, carac, all_excel_data):
     return all_excel_data
 
 
-def export_excel_revue_veine(revue_veine, all_excel_data):
+def export_excel_revue_veine(revue_veine, all_excel_data, timestamp, work_repo):
     """
     Écrit le fichier Excel dans le répertoire de travail de la revue.
 
     Retourne:
         path_export_excel_revue (Path)
     """
-    work_repo = Path(revue_veine.directory)
     work_repo.mkdir(parents=True, exist_ok=True)
 
-    output_file = f"data-{revue_veine.name}-{datetime.now().strftime('%Y%m%d-%H%M')}.xlsx"
+    output_file = f"RevueVeine_{revue_veine.name}_{timestamp}.xlsx"
     path_export_excel_revue = work_repo / output_file
 
-    print(all_excel_data)
 
     with pd.ExcelWriter(path_export_excel_revue, engine="openpyxl", mode="w") as writer:
         for sheet_name, df in all_excel_data.items():

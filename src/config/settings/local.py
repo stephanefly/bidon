@@ -11,18 +11,9 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 INTERNAL_IPS = ["127.0.0.1"]
 
-WORKING_REPERTORY = \
-    r"\\nas23\YRKC\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\03_Postprocessing\TRUNKS\data\repertoire_de_travail"
-
-EXCEL_POST_ANNA_PATH_7 = r"post\postAnNA\Perfos0D_moy_7.xlsx"
-EXCEL_POST_ANNA_PATH_10 = r"post\postAnNA\Perfos0D_moy_10.xlsx"
-EXCEL_POST_ANTARES_PATH_7 = r"post\postAntares\Perfos0D_moy_7.xlsx"
-EXCEL_POST_ANTARES_PATH_10 = r"post\postAntares\Perfos0D_moy_10.xlsx"
-
-HDF5_PATH = r"post\postAnNA\Gradients_Complets.trac"
-BSAM_PATH = r"init\bc_BSAM"
-
-PERFOS0D_EXPORT_NAME = "export_perfos0D"
+STATICFILES_DIRS = [
+    "static",
+]
 
 DATABASES = {
     "default": {
@@ -35,7 +26,8 @@ DATABASES = {
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 LDAP_HOST = "ldaps://snm.snecma"
 LDAP_DOMAIN = "SNM"
-GROUP_OF_ALLOWED_USERS = "a0yycu03"
+GROUP_OF_ALLOWED_USERS = "a0ykut01"
 
-INSTALLED_APPS += ['silk']
-MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+
+WORKING_REPERTORY = \
+    r"\\nas23\YRKC\02_Methodes_et_Outils\03_Outils\03_Moyenne_Fidelite_CFD\03_Postprocessing\TRUNKS\data\repertoire_de_travail"

@@ -1,18 +1,18 @@
 """
 Module settings de base.
 """
-
 import os
-import sys
 from pathlib import Path
+import sys
 
 from django.core.exceptions import ImproperlyConfigured
 from yaml import safe_load
 
 # Initialize environment variables
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
+IS_WINDOWS = (os.name == "nt")   # nt = Windows, posix = Linux/Mac
+PATH_STYLE = "windows" if IS_WINDOWS else "linux"
 
 try:
     ENV_FILEPATH = os.environ["ENV_FILEPATH"]
@@ -66,7 +66,9 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "apps/templates"],
+        "DIRS": [
+            BASE_DIR / "apps" / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -116,7 +118,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "static"
-STATICFILES_DIRS = [BASE_DIR / "apps/static"]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -129,15 +130,13 @@ AUTHENTICATION_BACKENDS = [
 
 
 
-
-
 # Authentication
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-GROUP_OF_ALLOWED_USERS = 'a0ykhut1'
-GROUP_OF_STAFF_USERS = 'a0ykhut1'
-GROUP_OF_SUPERUSERS = 'a0ykhut1'
+GROUP_OF_ALLOWED_USERS = 'a0ykut01'
+GROUP_OF_STAFF_USERS = 'a0ykut01'
+GROUP_OF_SUPERUSERS = 'a0ykut01'
 LDAP_HOST = r"ldaps://one.ad"
 LDAP_DOMAIN = "one"
 LDAP_SERVER = "one.ad"
@@ -149,3 +148,13 @@ LOGIN_MESSAGE = "Bienvenue sur Trunks"
 COMPLIANCE_MODE = True
 RETENTION_DAYS = 10
 LOGGING_DARK_MODE = False
+
+EXCEL_POST_ANNA_PATH_7 = r"post\postAnNA\Perfos0D_moy_7.xlsx"
+EXCEL_POST_ANTARES_PATH_7 = r"post\postAntares\Perfos0D_moy_7.xlsx"
+EXCEL_POST_ANNA_PATH_10 = r"post\postAnNA\Perfos0D_moy_10.xlsx"
+EXCEL_POST_ANTARES_PATH_10 = r"post\postAntares\Perfos0D_moy_10.xlsx"
+HDF5_PATH = r"post\postAnNA\Gradients_Complets.trac"
+BSAM_PATH = r"init\bc_BSAM"
+PERFOS0D_EXPORT_NAME = "export_perfos0D"
+WORKING_REPERTORY = \
+    r"\\data\_R_et_T\H7-MAORI\DTP-1\Veine\Calculs\RM9_RD9\TOUT\TEST-TRUNKS"

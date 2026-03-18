@@ -18,6 +18,10 @@
             <button type="submit" class="btn btn-primary">Scanner</button>
          </form>
       </div>
+                    {% else %}
+<div class="alert alert-warning mb-2" role="alert">
+    Impossible d'ajouter des nouveaux cas pour un état gelé
+</div>
       {% endif %}
       <div class="row">
          {% if etat.cas_temp_repertory and not etat.freeze %}
@@ -86,7 +90,10 @@
                   <label for="hdf">hdf (.trac)</label><br>
                  </div>
                <br>
-               <input type="submit" class="btn btn-primary" value="Ajouter">
+                <button type="submit" class="btn btn-primary rounded-pill px-3">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Ajouter
+                </button>
             </form>
          </div>
          {% endif %}
@@ -96,19 +103,23 @@
 
 <script>
 function fetchCasCannelle(inputId, listId) {
-    const query = document.getElementById(inputId)?.value || '';
 
-    if (query.trim() === '') return; // Ne pas faire de requête si le champ est vide
+    let query = document.getElementById(inputId)?.value || '';
+
+    // Si vide → on envoie *
+    if (query.trim() === '') {
+        query = '*';
+    }
 
     fetch("{% url 'search_cas_cannelle' 'cas_cannelle' etat.id %}?q=" + encodeURIComponent(query))
         .then(response => {
             if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-            return response.json(); // ← Conversion en JSON
+            return response.json();
         })
         .then(data => {
             const casList = document.getElementById(listId);
             if (casList && Array.isArray(data.results)) {
-                casList.innerHTML = ''; // Vider la liste
+                casList.innerHTML = '';
                 data.results.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item;
@@ -121,8 +132,8 @@ function fetchCasCannelle(inputId, listId) {
             console.error('Erreur AJAX :', error);
         });
 }
-
 </script>
+
 <script>
    // Fonction pour présélectionner toutes les options du second select
    window.onload = function () {
@@ -147,4 +158,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+</script>
+<script>
+document.querySelectorAll('input[name="input_file"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        localStorage.setItem('input_file', radio.value);
+    });
+});
+
+const saved = localStorage.getItem('input_file');
+if (saved) {
+    document.querySelector(`input[value="${saved}"]`).checked = true;
+}
 </script>

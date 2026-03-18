@@ -1,21 +1,23 @@
-from apps.main.models import Cas, Etat, IsoVitesse, Row, RowPair
-import os, uuid, pathlib
-import pandas as pd
-from django.http import request
-from django.utils import timezone
-from django.core.files.storage import FileSystemStorage
-import pandas as pd
+import os
+import pathlib
+import uuid
 from collections import defaultdict
-import re
+
+import pandas as pd
+from django.core.files.storage import FileSystemStorage
+from django.utils import timezone
+
+from apps.main.models import Cas, Row, RowPair
 from apps.main.modules.graph_perfo_0d.gestion_data import set_inlet_outlet_row_obj
+
 
 def lecture_user_file_curve(f, iso_vitesse):
     # Lecture de fichier
-
-    ext = pathlib.Path(f.name).suffix.lower()
-    # Nom unique
-    ts = timezone.now().strftime("%Y%m%d-%H%M%S")
-    filename = f"{ts}_{uuid.uuid4().hex}{ext}"
+    path = pathlib.Path(f.name)
+    stem = path.stem  # nom du fichier sans extension
+    ext = path.suffix.lower()  # extension
+    ts = timezone.now().strftime("%Y%m%d")
+    filename = f"{stem}_{ts}{ext}"
     # Sauvegarde physique
     fs = FileSystemStorage(
         location=os.path.splitext(iso_vitesse.etat.get_cache_filepath())[0])
@@ -63,7 +65,6 @@ def dico_listes_par_colonne(df: pd.DataFrame, iso_vitesse, file_path) :
     # Parcourt toutes les lignes de données (à partir de 1)
     for row in range(1, len(df)):
         point_val = df.loc[row, point_col]
-        print(point_val)
         point_cas = Cas.objects.create(
             name=point_val,
             iso_vitesse=iso_vitesse,
@@ -92,7 +93,6 @@ def build_config_row(data: dict):
         elif "-" not in key:
             result["isole"].append(key)
 
-    print(result)
     return result
 
 
@@ -104,7 +104,6 @@ def build_row_list(structure: dict):
             unique_parts.update(elt.split('-'))
 
     row_list = sorted(unique_parts)  # trié, optionnel
-    print(row_list)
 
     return row_list
 

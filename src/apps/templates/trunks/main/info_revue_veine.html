@@ -1,4 +1,7 @@
 {% extends 'trunks/main/base.html' %}
+{% load path_filters %}
+{% load permissions_tags %}
+
 {% block content %}
 
 
@@ -10,43 +13,11 @@
     Gestion des BSAM
   </div>
    <div class="card-body" style="background-color: #e9ecef;">
-<!-- Bouton Ajouter un BSAM -->
 
 
 <br>
 
-<!-- Modal -->
-<div class="modal fade" id="ajouterBsamModal" tabindex="-1"
-     aria-labelledby="ajouterBsamLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="post"
-              action="{% url 'ajouter_bsam' revue_veine.id %}">
-            {% csrf_token %}
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ajouterBsamLabel">Ajouter un
-                        BSAM</h5>
-                    <button type="button" class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Fermer"></button>
-                </div>
-                <div class="modal-body">
-                    <label for="bsam-path" class="form-label">Chemin du
-                        fichier BSAM :</label>
-                    <input type="text" class="form-control" name="bsam_path"
-                           id="bsam-path"
-                           placeholder="Ex: C:/Users/.../mon_fichier.bsam"
-                           required>
-                </div>
 
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Ajouter
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
 <style>
 .table-white-border td,
@@ -74,10 +45,11 @@
         <tr data-iso-id="{{ cas.iso_vitesse.id }}"
             class="align-middle text-center"
             style="background-color: {{ cas.iso_vitesse.color }}; color: white; word-break: break-all;">
-            
+
             <!-- Chemin -->
+{#            <td class="py-3" style="color: white">{{ cas.bsam_path|os_path }}</td>#}
             <td class="py-3" style="color: white">{{ cas.bsam_path }}</td>
-        
+
             <!-- Statut -->
             <td class="cas-status" data-id="{{ cas.id }}">
                 {% if cas.used %}
@@ -86,13 +58,13 @@
                     <i class="bi bi-x-square-fill text-danger fs-3"></i>
                 {% endif %}
             </td>
-        
+
             <!-- Couleur -->
             <td>
                 <select class="form-select text-center select-couleur-mini mx-auto"
                         data-iso-id="{{ cas.iso_vitesse.id }}"
                         style="background-color: {{ cas.iso_vitesse.color }}; color: white"
-                        onchange="updateIsovitesseColor({{ cas.iso_vitesse.id }}, this.value)">
+                        onchange="updateIsovitesseColor({{ cas.iso_vitesse.id }}, this.value)" {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
                     {% for color_code, color_label in color_options.items %}
                         <option value="{{ color_code }}"
                                 style="background-color: {{ color_code }}; font-weight: bold;"
@@ -102,13 +74,13 @@
                     {% endfor %}
                 </select>
             </td>
-        
+
             <!-- Symbole -->
             <td>
                 <select class="form-select text-center select-symbole-mini mx-auto"
                         data-iso-id="{{ cas.iso_vitesse.id }}"
                         style="background-color: {{ cas.iso_vitesse.color }}; color: white;"
-                        onchange="updateIsovitesseSymbol({{ cas.iso_vitesse.id }}, this.value)">
+                        onchange="updateIsovitesseSymbol({{ cas.iso_vitesse.id }}, this.value)" {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
                     {% for symbol_code, symbol_label in symbol_options.items %}
                         <option value="{{ symbol_code }}"
                                 {% if cas.iso_vitesse.marker == symbol_code %}selected{% endif %}>
@@ -117,7 +89,7 @@
                     {% endfor %}
                 </select>
             </td>
-        
+
             <!-- Actions -->
             <td>
                 <div class="d-flex justify-content-center gap-1">
@@ -125,23 +97,23 @@
                             class="btn btn-primary btn-sm toggle-used"
                             data-id="{{ cas.id }}"
                             data-url="{% url 'active_item' 'cas' cas.id %}"
-                            title="{% if cas.used %}Désactiver{% else %}Activer{% endif %}">
+                            title="{% if cas.used %}Désactiver{% else %}Activer{% endif %}" {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
                         {% if cas.used %}
                             <i class="bi bi-eye-slash"></i>
                         {% else %}
                             <i class="bi bi-eye"></i>
                         {% endif %}
                     </button>
-        
+
                     <button type="button"
                             class="btn btn-primary btn-sm"
-                            onclick="copyToClipboard('{{ cas.repertory|escapejs }}')"
+                            onclick="copyToClipboard('{{ cas.repertory|os_path }}')"
                             title="Ouvrir le dossier du cas"
                             data-bs-toggle="tooltip"
-                            data-bs-placement="top">
+                            data-bs-placement="top" {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
                         <i class="bi bi-folder"></i>
                     </button>
-        
+
                     <form method="post"
                           action="{% url 'remove_bsam' revue_veine.id cas.id %}"
                           class="m-0 p-0 d-inline">
@@ -149,7 +121,7 @@
                         <button type="submit"
                                 class="btn btn-danger btn-sm"
                                 onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce BSAM ?');"
-                                title="Supprimer">
+                                title="Supprimer" {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
                             <i class="bi bi-trash-fill"></i>
                         </button>
                     </form>
@@ -161,11 +133,80 @@
     </tbody>
 </table>
 
-<button class="btn btn-info btn rounded-pill px-3" data-bs-toggle="modal"data-bs-target="#ajouterBsamModal">
+<!-- Bouton Ajouter un BSAM -->
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+
+  <!-- Gauche : Ajouter -->
+  <button class="btn btn-primary rounded-pill px-3"
+          data-bs-toggle="modal"
+          data-bs-target="#ajouterBsamModal"
+          {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
     <i class="bi bi-plus-circle me-1"></i> Ajouter un BSAM
+  </button>
+
+  <!-- Droite : actions globales -->
+  <div class="d-flex gap-2">
+    <button type="button"
+            class="btn btn-primary btn-sm"
+            id="enableAllBtn"
+            {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
+      <i class="bi bi-eye"></i> Tout activer
     </button>
-       </div>   </div>
+
+    <button type="button"
+            class="btn btn-secondary btn-sm"
+            id="disableAllBtn"
+            {% if not revue_veine|is_allowed:request.user %} disabled {% endif %}>
+      <i class="bi bi-eye-slash"></i> Tout désactiver
+    </button>
+  </div>
+  
+
+</div>
+
+
+
+  
+    <!-- Modal -->
+<div class="modal fade" id="ajouterBsamModal" tabindex="-1"
+     aria-labelledby="ajouterBsamLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post"
+              action="{% url 'ajouter_bsam' revue_veine.id %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ajouterBsamLabel">Ajouter un
+                        BSAM</h5>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="bsam-path" class="form-label">Chemin du
+                        fichier BSAM :</label>
+                    <input type="text" class="form-control" name="bsam_path"
+                           id="bsam-path"
+                           placeholder="Ex: C:/Users/.../mon_fichier.bsam"
+                           required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success" {% if allowed %}disabled{% endif %}>Ajouter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+       </div>
+
+
+       </div>
        <br>
+
+
 <a id="traceVeineBtn"
    href="{% url 'download_pdf_trace_veine' revue_veine.id %}"
    class="btn btn-success">
@@ -180,96 +221,190 @@
 
 <!-- Modal de confirmation -->
 <div class="modal fade" id="confirmDownloadModal" tabindex="-1"
-     role="dialog" aria-labelledby="confirmDownloadModalLabel"
+     aria-labelledby="confirmDownloadModalLabel"
      aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
             <form method="post"
                   action="{% url 'export_graph_detais_bsam' revue_veine.id %}">
                 {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmDownloadModalLabel">
-                        Revue Veine</h5>
-                    <button type="button" class="btn-close"
+                <div class="modal-header" style="background: linear-gradient(90deg, #481449 0%, #8f4890 100%); color: white;">
+                    <h5 class="modal-title mb-0" id="confirmDownloadModalLabel">
+                        Revue veine détaillée
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
                             data-bs-dismiss="modal"
                             aria-label="Fermer"></button>
                 </div>
+
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Hauteurs de veine:</label>
+                    <div class="row g-4">
 
-                        <!-- Champs pré-remplis et modifiables avec boutons de suppression -->
-                        <div class="input-group mb-2">
-                            <input type="number" name="hauteur_base_1"
-                                   class="form-control" value="0" step="0.1"
-                                   min="0" max="1">
-                            <button type="button" class="btn btn-danger"
-                                    onclick="this.parentNode.remove();">✖
-                            </button>
+                        <!-- Colonne gauche : liste des caracs -->
+                        <div class="col-lg-8">
+                            <div class="border rounded-3 p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold mb-0">Liste des caractéristiques à tracer</h6>
+                                    <span class="text-muted small">
+                                        Les grandeurs non selectionnées de seront pas calculées
+                                    </span>
+                                </div>
+
+                                <div class="row">
+                                    {# On boucle sur lst_carac #}
+                                    {% for carac in lst_carac %}
+                                        <div class="col-md-4 col-sm-6 mb-2">
+                                            <div class="form-check form-switch">
+                                            <!-- Checkbox Django -->
+                                            <input
+                                                class="form-check-input"
+                                                type="checkbox"
+                                                id="carac_{{ forloop.counter0 }}"
+                                                name="carac_{{ forloop.counter0 }}"
+                                                {% if carac.checked %}checked{% endif %}
+                                                data-default-checked="{% if carac.checked %}true{% else %}false{% endif %}">
+
+
+                                                <label class="form-check-label small"
+                                                       for="carac_{{ forloop.counter0 }}">
+                                                    {{ carac.carac_name }} ({{ carac.row_type }})
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {# Retour à la ligne toutes les 3 colonnes #}
+                                        {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                                            </div>
+                                            <div class="row">
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <br>
+                                <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
+                                    <!-- Bouton Tout cocher -->
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-lg flex-fill"
+                                            onclick="checkAllCaracs()">
+                                        Tout cocher
+                                    </button>
+                                
+                                    <!-- Bouton Tout décocher -->
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-lg flex-fill"
+                                            onclick="uncheckAllCaracs()">
+                                        Tout décocher
+                                    </button>
+                                
+                                    <!-- Bouton Par défaut -->
+                                    <button type="button"
+                                            class="btn btn-outline-info btn-lg flex-fill"
+                                            onclick="resetDefaultCaracs()">
+                                        Par défaut
+                                    </button>
+                                </div>
+
+                            </div>
+
                         </div>
 
-                        <div class="input-group mb-2">
-                            <input type="number" name="hauteur_base_2"
-                                   class="form-control" value="0.5"
-                                   step="0.1" min="0" max="1">
-                            <button type="button" class="btn btn-danger"
-                                    onclick="this.parentNode.remove();">✖
-                            </button>
+                        <!-- Colonne droite : hauteurs de veine -->
+<div class="col-lg-4 d-flex flex-column">
+                            <div class="border rounded-3 p-3 bg-light">
+                                <h6 class="fw-bold mb-3">Hauteurs de veine</h6>
+                                <p class="text-muted small mb-3">
+                                    Choix des hauteurs de veine entre 0 et 1.
+                                </p>
+
+                                <!-- Champs pré-remplis et modifiables avec boutons de suppression -->
+                                <div class="input-group mb-2">
+                                    <input type="number" name="hauteur_base_1"
+                                           class="form-control"
+                                           value="0" step="0.1"
+                                           min="0" max="1">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            onclick="this.parentNode.remove();">×
+                                    </button>
+                                </div>
+
+                                <div class="input-group mb-2">
+                                    <input type="number" name="hauteur_base_2"
+                                           class="form-control"
+                                           value="0.5" step="0.1"
+                                           min="0" max="1">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            onclick="this.parentNode.remove();">×
+                                    </button>
+                                </div>
+
+                                <div class="input-group mb-2">
+                                    <input type="number" name="hauteur_base_3"
+                                           class="form-control"
+                                           value="1" step="0.1"
+                                           min="0" max="1">
+                                    <button type="button" class="btn btn-outline-danger"
+                                            onclick="this.parentNode.remove();">×
+                                    </button>
+                                </div>
+
+                                <hr>
+
+                                <label class="form-label fw-semibold">
+                                    Hauteurs personnalisées (optionnelles)
+                                </label>
+                                <p class="text-muted small mb-2">
+                                    Jusqu’à 3 hauteurs supplémentaires, toujours entre 0 et 1.
+                                </p>
+
+                                <input type="number" name="hauteur_base_4"
+                                       class="form-control mb-2"
+                                       placeholder="Hauteur personnalisée 1"
+                                       step="0.1" min="0" max="1">
+
+                                <input type="number" name="hauteur_base_5"
+                                       class="form-control mb-2"
+                                       placeholder="Hauteur personnalisée 2"
+                                       step="0.1" min="0" max="1">
+
+                                <input type="number" name="hauteur_base_6"
+                                       class="form-control"
+                                       placeholder="Hauteur personnalisée 3"
+                                       step="0.1" min="0" max="1">
+                            </div>
+
+                            <br>
+                            <div class="mt-auto pt-3 d-flex">
+                                <button type="submit" id="revueVeineBtn"
+                                        class="btn btn-success btn-lg ms-auto"
+                                        style="border-color:#031633;">
+                                    <i class="bi bi-play-circle me-1"></i>
+                                    Générer la revue
+                                </button>
+                            </div>
+
                         </div>
 
-                        <div class="input-group mb-2">
-                            <input type="number" name="hauteur_base_3"
-                                   class="form-control" value="1" step="0.1"
-                                   min="0" max="1">
-                            <button type="button" class="btn btn-danger"
-                                    onclick="this.parentNode.remove();">✖
-                            </button>
-                        </div>
 
-                        <label class="form-label mt-3">Possibilité d'ajouter
-                            jusqu'à 3
-                            hauteurs en plus (entre 0 et 1) :</label>
 
-                        <!-- Inputs pour les valeurs personnalisées (entre 0 et 1) -->
-                        <input type="number" name="hauteur_base_4"
-                               class="form-control mt-2"
-                               placeholder="Hauteur personnalisée 1 (optionnel)"
-                               step="0.1" min="0" max="1">
-
-                        <input type="number" name="hauteur_base_5"
-                               class="form-control mt-2"
-                               placeholder="Hauteur personnalisée 2 (optionnel)"
-                               step="0.1" min="0" max="1">
-                        <input type="number" name="hauteur_base_6"
-                               class="form-control mt-2"
-                               placeholder="Hauteur personnalisée 3 (optionnel)"
-                               step="0.1" min="0" max="1">
                     </div>
                 </div>
 
 
-                <div class="modal-footer">
-                    <!-- Ajout du lien Django directement ici -->
-
-                          <button type="submit" id="revueVeineBtn" class="btn btn-success btn-lg ms-3" style="border-color:#031633;">
-        <i class="bi bi-play-circle me-1"></i> Générer
-      </button>
-                </div>
             </form>
         </div>
     </div>
 </div>
 
+
 <!-- Copier Repertoire de travail -->
-<button onclick="copyToClipboard('{{ revue_veine.directory|escapejs }}')" 
+<button onclick="copyToClipboard('{{ revue_veine.work_directory|os_path }}')"
         class="btn btn-primary"
-        style="border-width: 2px; padding: 8px 14px; font-weight: 500;" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Lancer une revue pour avoir un export excel">
-    
-    <i class="bi bi-folder"></i> 
+        style="border-width: 2px; padding: 8px 14px; font-weight: 500;"  >
+
+    <i class="bi bi-folder"></i>
     <span>Dossier de travail</span>
 
     <span class="badge bg-secondary" style="font-size: 0.75rem;" >
-        Depôt Export Excel
+        Depôt Export Excel et Html
     </span>
 </button>
 
@@ -280,170 +415,186 @@ document.addEventListener('DOMContentLoaded', () => {
   const originalText = traceBtn.innerHTML;
 
   traceBtn.addEventListener('click', async (e) => {
-    e.preventDefault(); // on contrôle le download
+    e.preventDefault();
+
     const url = traceBtn.getAttribute('href');
 
-    // (optionnel) bloquer si aucun cas actif
-    // const nbActifs = document.querySelectorAll('.cas-status i.bi-check-circle-fill').length;
-    // if (nbActifs === 0) { alert('Aucun cas actif !'); return; }
-
-    // UX: spinner
     traceBtn.disabled = true;
     traceBtn.classList.add('disabled');
-    traceBtn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Génération...';
+    traceBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Génération...';
 
     try {
       const response = await fetch(url, {
         method: 'GET',
-        // Si cross-domain avec cookies, décommente:
-        // credentials: 'include',
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
+
       if (!response.ok) throw new Error('Erreur serveur');
 
-      // Récupère le nom de fichier depuis Content-Disposition si présent
-      const dispo = response.headers.get('Content-Disposition') || '';
-      let filename = 'trace_veine.pdf';
-      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i);
-      if (match) filename = decodeURIComponent(match[1] || match[2]);
+      // ✅ JSON uniquement
+      const data = await response.json();
 
-      // Transforme en Blob et déclenche le téléchargement
-      const blob = await response.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(downloadUrl);
+      if (data.ok) {
+        addToast("genere", data.message_data);
+      } else {
+        addToast("error", "Erreur lors de la génération de la veine");
+      }
+
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la génération ou du téléchargement du fichier.");
+      alert("Erreur lors de la génération.");
     } finally {
-      // ✅ Restaure le bouton dès que le fichier est prêt (ou en cas d’erreur)
       traceBtn.disabled = false;
       traceBtn.classList.remove('disabled');
       traceBtn.innerHTML = originalText;
+
     }
   });
 });
 </script>
 
-    
+
+
 <!-- button couleur -->
 <script>
-    // Changer la couleur (MAJ fond collapse ET groupe de boutons)
-    function updateIsovitesseColor(isoId, color) {
-        fetch("{% url 'update_color_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: "color_isovitesse=" + encodeURIComponent(color)
-        })
-            .then(response => {
-                if (response.ok) {
-                    // MAJ tous les boutons/badges portant le data-iso-id concerné
-                    document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
-                        // On évite de toucher au collapse principal qui reste transparent
-                        if (el.id !== 'isovitesse' + isoId) {
-                            el.style.backgroundColor = color;
-                            el.style.transition = "background 0.1s, border-color 0.1s";
-                        }
-                    });
+function updateIsovitesseColor(isoId, color) {
+    fetch("{% url 'update_color_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: "color_isovitesse=" + encodeURIComponent(color)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data && data.message) {
+            toastFromData(data, "info");
+        }
 
-                } else {
-                    alert("Erreur lors de la mise à jour !");
-                }
-            })
-            .catch(() => alert("Erreur réseau."));
-    }
+        // MAJ visuelle
+        document.querySelectorAll('[data-iso-id="' + isoId + '"]').forEach(function (el) {
+            if (el.id !== 'isovitesse' + isoId) {
+                el.style.backgroundColor = color;
+                el.style.transition = "background 0.1s, border-color 0.1s";
+            }
+        });
+    })
+    .catch(() => {
+        addToast("error", "Erreur réseau");
+    });
+}
 </script>
+
 
 <!-- Changer le symbole -->
 <script>
-    function updateIsovitesseSymbol(isoId, symbol) {
-        fetch("{% url 'update_symbol_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: "symbole_isovitesse=" + encodeURIComponent(symbol)
-        })
-            .then(response => {
-                if (!response.ok) throw new Error("HTTP error " + response.status);
-                // Ici tu peux forcer l’affichage sans attendre de data
-                // Optionnel : mettre à jour l’UI côté JS selon la valeur sélectionnée
-                const select = document.querySelector('.select-symbole-mini[data-iso-id="' + isoId + '"]');
-                if (select) {
-                    const badge = document.getElementById('iso-vitesse-symbol-' + isoId);
-                    if (badge) badge.textContent = select.selectedOptions[0].textContent;
-                }
-            })
-            .catch(() => alert("Erreur réseau."));
-    }
+function updateIsovitesseSymbol(isoId, symbol) {
+    fetch("{% url 'update_symbol_item' 'iso_vitesse' 0 %}".replace('0', isoId), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: "symbole_isovitesse=" + encodeURIComponent(symbol)
+    })
+    .then(response => response.json())
+    .then(data => {
+        toastFromData(data, "info");
 
+        // MAJ UI
+        const select = document.querySelector('.select-symbole-mini[data-iso-id="' + isoId + '"]');
+        if (select) {
+            const badge = document.getElementById('iso-vitesse-symbol-' + isoId);
+            if (badge) badge.textContent = select.selectedOptions[0].textContent;
+        }
+    })
+    .catch(() => addToast("error", "Erreur réseau"));
+}
 </script>
 
-<!-- Activer/Désactiver un cas -->
+
+<!-- Activer/Désactiver un cas + gestion boutons Trace/Revue Veine -->
 <script>
-// 1) CSRF fallback si non défini ailleurs
+// -- CSRF fallback --
 (function ensureCsrf(){
   if (typeof window.CSRF_TOKEN === 'undefined') {
     function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
+      const value = "; " + document.cookie;
+      const parts = value.split("; csrftoken=");
+      if (parts.length === 2) return parts.pop().split(";").shift();
     }
     window.CSRF_TOKEN = getCookie('csrftoken');
   }
 })();
 
-// 2) Handler robuste
+// -- Mise à jour des boutons Trace / Revue Veine --
+function updateBsamButtonsState() {
+  const activeCount   = document.querySelectorAll('.cas-status i.bi-check-circle-fill').length;
+  const traceBtn      = document.getElementById('traceVeineBtn');
+  const revueOpenBtn  = document.querySelector('button[data-bs-target="#confirmDownloadModal"]');
+
+  const disabled = (activeCount === 0);
+
+  [traceBtn, revueOpenBtn].forEach(function(btn) {
+    if (!btn) return;
+
+    btn.disabled = disabled;
+
+    if (disabled) {
+      btn.classList.add('disabled');
+      btn.setAttribute('data-bs-title', "Active au moins un BSAM pour utiliser ce bouton");
+      bootstrap.Tooltip.getOrCreateInstance(btn);  // ne touche pas data-bs-toggle
+    } else {
+      btn.classList.remove('disabled');
+      btn.removeAttribute('data-bs-title');
+      const tip = bootstrap.Tooltip.getInstance(btn);
+      if (tip) tip.dispose();
+    }
+  });
+}
+
+// -- Activation / Désactivation d'un cas --
 $(document).ready(function () {
+  updateBsamButtonsState(); // état initial
+
   $('.toggle-used').on('click', function () {
     const button  = $(this);
     const casId   = button.data('id');
     const url     = button.data('url');
 
-    // Évite le spam clic
     if (button.prop('disabled')) return;
 
-    // Sauvegarde état UI courant
-    const icon        = button.find('i');
-    const hadEyeSlash = icon.hasClass('bi-eye-slash');
-    const originalHtml = button.html();
+    const icon          = button.find('i');
+    const hadEyeSlash   = icon.hasClass('bi-eye-slash');
+    const originalHtml  = button.html();
     const originalTitle = button.attr('title');
-
-    {#// UX: spinner + disable#}
-    {#button.prop('disabled', true)#}
-    {#      .attr('aria-pressed', 'true')#}
-    {#      .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');#}
 
     $.ajax({
       url: url,
       type: 'POST',
       headers: { 'X-CSRFToken': window.CSRF_TOKEN },
+
       success: function (data) {
         if (!data || !data.success) {
-          // Rollback
-          button.html(originalHtml).prop('disabled', false).attr('aria-pressed', 'false');
+          button.html(originalHtml).prop('disabled', false);
           return;
         }
 
-        // Met à jour l’icône du bouton
+
+        // bouton
         if (data.used) {
           icon.removeClass('bi-eye').addClass('bi-eye-slash');
           button.attr('title', 'Désactiver');
+          addToast("info",`${data.cas_name} : Activé`);
         } else {
           icon.removeClass('bi-eye-slash').addClass('bi-eye');
           button.attr('title', 'Activer');
+          addToast("info",`${data.cas_name} : Désactivé`);
         }
 
-        // Cellule statut (icône ligne)
+        // icône dans le tableau
         const statusCellIcon = $(`.cas-status[data-id="${casId}"] i`);
         if (data.used) {
           statusCellIcon
@@ -455,78 +606,30 @@ $(document).ready(function () {
             .addClass('bi-x-square-fill text-danger');
         }
 
-        // Restaure le bouton (sans spinner)
-        button.html(icon).prop('disabled', false).attr('aria-pressed', 'false');
+        updateBsamButtonsState(); // recalcul des boutons
+
+        button.html(icon).prop('disabled', false);
       },
+
       error: function () {
-        // Rollback complet (y compris eye/eye-slash si on l’a déjà modifié par erreur)
-        if (hadEyeSlash) {
-          icon.removeClass('bi-eye').addClass('bi-eye-slash');
-        } else {
-          icon.removeClass('bi-eye-slash').addClass('bi-eye');
-        }
+        if (hadEyeSlash) icon.removeClass('bi-eye').addClass('bi-eye-slash');
+        else icon.removeClass('bi-eye-slash').addClass('bi-eye');
+
         button.attr('title', originalTitle)
               .html(originalHtml)
-              .prop('disabled', false)
-              .attr('aria-pressed', 'false');
+              .prop('disabled', false);
+
         alert('Erreur réseau ou CSRF. Réessayez.');
       }
     });
   });
 
-  // (Optionnel) Tooltips Bootstrap si présents ailleurs dans la page
+  // init tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
 });
 </script>
 
-<!-- ouvrir dossier -->
-<script>
-function copyToClipboard(text) {
-    // Copie dans le presse-papier
-    navigator.clipboard.writeText(text).then(function() {
-        afficherNotif2("Copié dans le presse-papier : " + text);
-    }, function() {
-        afficherNotif2("Erreur lors de la copie !");
-    });
-}
-
-function afficherNotif2(message) {
-    let notif = document.getElementById('custom-notif');
-    if (!notif) {
-        notif = document.createElement('div');
-        notif.id = 'custom-notif';
-        notif.style.position = 'fixed';
-        notif.style.top = '20px';
-        notif.style.right = '20px';
-        notif.style.minWidth = '250px';
-        notif.style.zIndex = 99999;
-        notif.style.padding = '16px 18px';
-        notif.style.borderRadius = '12px';
-        notif.style.fontSize = '1rem';
-        notif.style.color = '#fff';
-        notif.style.fontWeight = "bold";
-        notif.style.background = "#471448";
-        notif.style.boxShadow = '0 2px 10px rgba(0,0,0,0.11)';
-        document.body.appendChild(notif);
-    }
-    notif.innerHTML = message;
-    notif.style.display = 'block';
-    
-    // Disparition auto après 2,5 secondes
-    setTimeout(function() {
-        notif.style.display = "none";
-    }, 2500);
-}
-</script>
-
-{% if messages %}
-  <script>
-    {% for message in messages %}
-      alert("{{ message|escapejs }}");
-    {% endfor %}
-  </script>
-{% endif %}
 
 {#boutton generer revue#}
 <script>
@@ -537,53 +640,193 @@ document.addEventListener('DOMContentLoaded', () => {
   const originalText = btn.innerHTML;
 
   form.addEventListener('submit', async (e) => {
-    e.preventDefault(); // Empêche le rechargement
+    e.preventDefault();
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Génération...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Génération...';
 
     try {
       const response = await fetch(form.action, {
         method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
         body: new FormData(form)
       });
 
-      if (!response.ok) throw new Error('Erreur serveur');
+      const data = await response.json();
 
-      // 🔹 Récupère le nom du fichier depuis Content-Disposition
-      const dispo = response.headers.get('Content-Disposition') || '';
-      let filename = 'RevueVeine.html';
-      const match = dispo.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i);
-      if (match) filename = decodeURIComponent(match[1] || match[2]);
-
-      // 🔹 Récupère le contenu HTML
-      const htmlContent = await response.text();
-
-      // 🔹 Crée un blob et déclenche le téléchargement
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(downloadUrl);
-
-      // 🔹 Ferme la modal une fois le fichier prêt
-      const bsModal = bootstrap.Modal.getInstance(modal);
-      if (bsModal) bsModal.hide();
+      if (data.ok) {
+        addToast("genere", data.message_data);
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) bsModal.hide();
+      } else {
+        addToast("error", data.message_data || "Erreur génération revue veine");
+      }
 
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la génération ou du téléchargement du fichier.");
+      addToast("error", "Erreur lors de la génération.");
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
   });
 });
+</script>
+
+{#Desactiver tous les cas#}
+<script>
+  function setAllCasesUsed(targetUsed) {
+    const buttons = Array.from(document.querySelectorAll('.toggle-used'))
+      .filter(btn => !btn.disabled);
+
+    if (buttons.length === 0) return;
+
+    let changed = 0;
+
+    buttons.forEach(btn => {
+      const icon = btn.querySelector('i');
+      if (!icon) return;
+
+      const isUsed = icon.classList.contains('bi-eye-slash'); // si eye-slash => actuellement "used"
+      const needToggle = (targetUsed !== isUsed);
+
+      if (needToggle) {
+        btn.click(); // réutilise ton AJAX existant (active_item)
+        changed += 1;
+      }
+    });
+
+    if (changed === 0) {
+      addToast("info", targetUsed ? "Tout est déjà activé" : "Tout est déjà désactivé");
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const enableAllBtn  = document.getElementById('enableAllBtn');
+    const disableAllBtn = document.getElementById('disableAllBtn');
+
+    if (enableAllBtn) {
+      enableAllBtn.addEventListener('click', () => setAllCasesUsed(true));
+    }
+    if (disableAllBtn) {
+      disableAllBtn.addEventListener('click', () => setAllCasesUsed(false));
+    }
+  });
+</script>
+
+{#Cocher/Decocher tous les carac#}
+<script>
+// Liste des caractéristiques, avec checked par défaut
+const lst_carac = [
+  {carac_name: "NB AUBES", row_type: "ROTOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "NB AUBES", row_type: "STATOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "RBA", row_type: "ROTOR", checked: false},
+  {carac_name: "RBA", row_type: "STATOR", checked: false},
+  {carac_name: "RBF", row_type: "ROTOR", checked: false},
+  {carac_name: "RBF", row_type: "STATOR", checked: false},
+  {carac_name: "RBA GENEPI", row_type: "ROTOR", checked: false},
+  {carac_name: "RBA GENEPI", row_type: "STATOR", checked: false},
+  {carac_name: "RBF GENEPI", row_type: "ROTOR", checked: false},
+  {carac_name: "RBF GENEPI", row_type: "STATOR", checked: false},
+  {carac_name: "SSC", row_type: "ROTOR", checked: false},
+  {carac_name: "SSC", row_type: "STATOR", checked: false},
+  {carac_name: "SSC GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "SSC GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "CALAGE", row_type: "ROTOR", checked: false},
+  {carac_name: "CALAGE", row_type: "STATOR", checked: false},
+  {carac_name: "CALAGE GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "CALAGE GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "CORDE", row_type: "ROTOR", checked: false},
+  {carac_name: "CORDE", row_type: "STATOR", checked: false},
+  {carac_name: "CORDE GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "CORDE GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "CORDE AXIAL", row_type: "ROTOR", checked: false},
+  {carac_name: "CORDE AXIAL", row_type: "STATOR", checked: false},
+  {carac_name: "EMAX", row_type: "ROTOR", checked: false},
+  {carac_name: "EMAX", row_type: "STATOR", checked: false},
+  {carac_name: "EMAX GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "EMAX GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "EMAXSC", row_type: "ROTOR", checked: false},
+  {carac_name: "EMAXSC", row_type: "STATOR", checked: false},
+  {carac_name: "EMAXSC GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "EMAXSC GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "XEMAXSC", row_type: "ROTOR", checked: false},
+  {carac_name: "XEMAXSC", row_type: "STATOR", checked: false},
+  {carac_name: "XEMAXSC GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "XEMAXSC GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "HSC", row_type: "ROTOR", Nb_hauteur_base: 1, checked: false},
+  {carac_name: "HSC", row_type: "STATOR", Nb_hauteur_base: 1, checked: false},
+  {carac_name: "HSC GENEPI", row_type: "ROTOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "HSC GENEPI", row_type: "STATOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "RALENTISSEMENT", row_type: "ROTOR", checked: true},
+  {carac_name: "RALENTISSEMENT", row_type: "STATOR", checked: true},
+  {carac_name: "MW1", row_type: "ROTOR", checked: true},
+  {carac_name: "MW1", row_type: "STATOR", checked: true},
+  {carac_name: "MW2", row_type: "ROTOR", checked: true},
+  {carac_name: "MW2", row_type: "STATOR", checked: true},
+  {carac_name: "PI", row_type: "ROTOR", checked: true},
+  {carac_name: "BETA1", row_type: "ROTOR", checked: true},
+  {carac_name: "BETA1", row_type: "STATOR", checked: true},
+  {carac_name: "BETA2", row_type: "ROTOR", checked: true},
+  {carac_name: "BETA2", row_type: "STATOR", checked: true},
+  {carac_name: "DEVIATION", row_type: "ROTOR", checked: true},
+  {carac_name: "DEVIATION", row_type: "STATOR", checked: true},
+  {carac_name: "DLI", row_type: "STATOR", checked: false},
+  {carac_name: "DLI", row_type: "ROTOR", checked: false},
+  {carac_name: "DLI GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "DLI GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "DHSU2", row_type: "ROTOR", checked: true},
+  {carac_name: "PSIA", row_type: "ROTOR", checked: false},
+  {carac_name: "PSIA", row_type: "STATOR", checked: false},
+  {carac_name: "PSIA GENEPI", row_type: "ROTOR", checked: true},
+  {carac_name: "PSIA GENEPI", row_type: "STATOR", checked: true},
+  {carac_name: "VZSU", row_type: "ROTOR", checked: false},
+  {carac_name: "DSS GENEPI", row_type: "ROTOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "DSS", row_type: "ROTOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "DSTD1", row_type: "ROTOR", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "KD", row_type: "PLANS", Nb_hauteur_base: 1, checked: true},
+  {carac_name: "JEU AXIAL", row_type: "ALL", checked: true},
+  {carac_name: "JEU MERIDIEN", row_type: "ALL", checked: true}
+];
+
+// Génération dynamique des checkboxes
+const container = document.getElementById('carac-container');
+
+lst_carac.forEach(carac => {
+    const div = document.createElement('div');
+    div.classList.add('form-check');
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.classList.add('form-check-input');
+    input.checked = carac.checked;
+    input.dataset.defaultChecked = carac.checked ? 'true' : 'false'; // stocke l'état par défaut
+    input.id = `${carac.carac_name}_${carac.row_type}`;
+
+    const label = document.createElement('label');
+    label.classList.add('form-check-label');
+    label.setAttribute('for', input.id);
+    label.innerText = `${carac.carac_name} (${carac.row_type})`;
+
+    div.appendChild(input);
+    div.appendChild(label);
+    container.appendChild(div);
+});
+
+// Fonctions pour cocher/décocher
+function checkAllCaracs() {
+    document.querySelectorAll('input.form-check-input').forEach(cb => cb.checked = true);
+}
+
+function uncheckAllCaracs() {
+    document.querySelectorAll('input.form-check-input').forEach(cb => cb.checked = false);
+}
+
+// Fonction pour remettre les valeurs par défaut
+function resetDefaultCaracs() {
+    // prend tous les checkboxes du modal
+    document.querySelectorAll('#confirmDownloadModal input[type="checkbox"]').forEach(cb => {
+        cb.checked = cb.dataset.defaultChecked === 'true';
+    });
+}
 </script>
 
 

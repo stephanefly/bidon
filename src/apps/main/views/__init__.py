@@ -5,7 +5,7 @@ from .graph_views import *
 from .revue_veine_views import *
 from .revue_aube_views import *
 from .configuration_views import *
-from .y_to_yplus_views import *
+from .yplus_to_y import *
 from .split_pdf_views import *
 from .shenron_views import *
 

@@ -88,15 +88,23 @@ class LdapAuthBackend(BaseBackend):
 
         return entries["attributes"]
 
-    def is_not_allowed_to_logon(self, user_groups):
-        """
-        Not allowed if the group of allowed users not in the user groups
-        :return:
-        """
-        found_groups = [
-            group_name
-            for group_name in user_groups
-            if settings.GROUP_OF_ALLOWED_USERS in group_name
-        ]
 
-        return not found_groups
+    def is_not_allowed_to_logon(self, user_groups):
+        print("=== Custom LDAP backend loaded ===")
+
+        # user_groups : liste des groupes LDAP renvoyée par user_ldap["memberOf"]
+
+        # Normalisation : tout convertir en liste
+        def to_list(value):
+            if isinstance(value, (list, tuple)):
+                return list(value)
+            return [value]
+
+        allowed = (
+                to_list(settings.GROUP_OF_ALLOWED_USERS) +
+                to_list(settings.GROUP_OF_STAFF_USERS) +
+                to_list(settings.GROUP_OF_SUPERUSERS)
+        )
+
+        # Vérifier si au moins un des groupes LDAP de l'utilisateur est autorisé
+        return not any(group in allowed for group in user_groups)

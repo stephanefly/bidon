@@ -18,7 +18,7 @@ dependencies = [
     "openpyxl",
     "safranae-bsamreader",
     "reportlab",
-    "bokeh",
+    "bokeh==3.8.0",
     "psycopg2-binary",
     "matplotlib",
     "h5py",
@@ -26,6 +26,11 @@ dependencies = [
     "django-silk",
     "pypdf",
     "xlrd",
+    "ruff",
+    "pytest",
+    "pytest-cov",
+    "pytest-django",
+    "pytest-mock",
 ]
 
 
@@ -67,6 +72,8 @@ include = [
     "CONTRIBUTING.md",
     "requirements-prod.txt",
 ]
+artifacts = ["/static"]
+
 [tool.hatch.build.targets]
 packages = ["apps", "config"]
 

@@ -6,4 +6,4 @@ class MainConfig(AppConfig):
     name = "apps.main"
 
     def ready(self):
-        import apps.main.signals  # 👈 important pour activer le signal
+        pass  # 👈 important pour activer le signal
